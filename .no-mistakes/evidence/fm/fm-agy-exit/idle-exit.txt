@@ -1,0 +1,2 @@
+control-plane busy exit stopped agy without a settled idle retry
+stopped agyexitlive1 harness=agy backend=herdr endpoint=fm-lab-agyexit-60890-19047:w1:p2 worktree=/Users/apipoj/.treehouse/scratch-project-00dcf3/1/scratch-project

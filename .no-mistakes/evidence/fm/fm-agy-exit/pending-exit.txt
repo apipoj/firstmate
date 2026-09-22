@@ -1,0 +1,2 @@
+pending exit rc=1
+error: task agyexitlive1's composer visibly holds pending text; refusing to type the /quit exit command because it would concatenate onto that text. Clear or submit the pending text, then retry 'exit'

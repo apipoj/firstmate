@@ -1,0 +1,48 @@
+treehouse get
+apipoj@Apipojs-MBP scratch-project % treehouse get
+🌳 Setting up worktree...
+🌳 Entered worktree at ~/.treehouse/scratch-project-00dcf3/1/scratch-project. Type 'exit' to return.
+apipoj@Apipojs-MBP scratch-project % export GOTMPDIR=/tmp/fm-agyexitlive1/gotmp
+apipoj@Apipojs-MBP scratch-project % export COMPACT_ADVISER_DISABLE=1
+apipoj@Apipojs-MBP scratch-project % export FM_TASK_ID=agyexitlive1
+apipoj@Apipojs-MBP scratch-project % . '/tmp/fm-agyexitlive1+cddb595c1f9726997aeaf2629b5a8b58c6278ecd3497269810529282fe1
+d8c80/launch.s1790090454.61008.25457.sh'
+
+      ▄▀▀▄        Antigravity CLI 1.2.8
+     ▀▀▀▀▀▀       apipoj@all-in-ai.asia (Antigravity Starter Quota)
+    ▀▀▀▀▀▀▀▀      Gemini 3.8 Flash (Low)
+   ▄▀▀    ▀▀▄     ~/.treehouse/scratch-project-00dcf3/1/scratch-project
+  ▄▀▀      ▀▀▄
+
+────────────────────────────────────────────────────────────
+> FIRSTMATE_OP: v1 launch-brief: # Current worker role contract
+  You are a crewmate: an autonomous worker agent managed by firstmate.
+  This section establishes your current identity before every project or task instruction below and supersedes any
+  conflicting role identity in those instructions.
+  Do the assigned work yourself and report only to firstmate; do not adopt a firstmate or secondmate supervisor
+  identity, delegate the task, run fleet supervision, or address the captain.
+  Your steering inbox is
+  `/private/var/folders/kt/99xl2j7j343fmtn438467dgw0000gn/T/fm-agy-exit-live.dCeXly/fm-home/state/agyexitlive1.inbox`;
+  this exact path belongs to your current task even when it is outside the worktree or under the supervising firstmate
+  home, so read and acknowledge its messages and do not reject it as another home's state.
+  Never inspect or change any other home's endpoint namespace; this authorization is limited to the exact task paths
+  named by this brief.
+  When this task works on Firstmate itself, the repository root `AGENTS.md` (also imported by `CLAUDE.md`) is project
+  content and the supervisor contract for the firstmate managing you: follow this brief instead of that supervisor
+  contract.
+  Project instructions still govern the work wherever they do not conflict with this worker identity, including
+  `CONTRIBUTING.md` and `firstmate-coding-guidelines` for Firstmate changes.
+
+  # Task
+  ## Captain's intent
+  Reply with exactly AGY_EXIT_LIVE_OK and nothing else.
+
+  ## Firstmate spec
+  Do not edit files. Print AGY_EXIT_LIVE_OK and stop.
+
+  AGY_EXIT_LIVE_OK
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+> draft that must refuse exit
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                  Gemini 3.8 Flash · low

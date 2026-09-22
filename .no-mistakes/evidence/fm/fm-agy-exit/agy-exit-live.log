@@ -1,0 +1,283 @@
+
+== provision lab fm-lab-agyexit-60890-19047 ==
+
+== spawn agy scout agyexitlive1 ==
+spawn rc=0
+spawned agyexitlive1 harness=agy kind=scout window=fm-lab-agyexit-60890-19047:w1:p2 worktree=/Users/apipoj/.treehouse/scratch-project-00dcf3/1/scratch-project
+window=fm-lab-agyexit-60890-19047:w1:p2
+endpoint_task_id=agyexitlive1
+worktree=/Users/apipoj/.treehouse/scratch-project-00dcf3/1/scratch-project
+project=/private/var/folders/kt/99xl2j7j343fmtn438467dgw0000gn/T/fm-agy-exit-live.dCeXly/scratch-project
+harness=agy
+kind=scout
+tasktmp=/tmp/fm-agyexitlive1
+model=gemini-3.8-flash-low
+effort=low
+spawn_gen=s1790090454.61008.25457
+backend=herdr
+herdr_session=fm-lab-agyexit-60890-19047
+herdr_workspace_id=w1
+herdr_tab_id=w1:t2
+herdr_pane_id=w1:p2
+
+== spawn pane capture w1:p2 ==
+treehouse get
+apipoj@Apipojs-MBP scratch-project % treehouse get
+🌳 Setting up worktree...
+🌳 Entered worktree at ~/.treehouse/scratch-project-00dcf3/1/scratch-project. Type 'exit' to return.
+apipoj@Apipojs-MBP scratch-project % export GOTMPDIR=/tmp/fm-agyexitlive1/gotmp
+apipoj@Apipojs-MBP scratch-project % export COMPACT_ADVISER_DISABLE=1
+apipoj@Apipojs-MBP scratch-project % export FM_TASK_ID=agyexitlive1
+apipoj@Apipojs-MBP scratch-project % . '/tmp/fm-agyexitlive1+cddb595c1f9726997aeaf2629b5a8b58c6278ecd3497269810529282fe1
+d8c80/launch.s1790090454.61008.25457.sh'
+
+      ▄▀▀▄        Antigravity CLI 1.2.8
+     ▀▀▀▀▀▀       apipoj@all-in-ai.asia
+    ▀▀▀▀▀▀▀▀      Gemini 3.8 Flash (Low)
+   ▄▀▀    ▀▀▄     ~/.treehouse/scratch-project-00dcf3/1/scratch-project
+  ▄▀▀      ▀▀▄
+⢿  Generating...
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+>
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+esc to cancel                                                                                     Gemini 3.8 Flash · low
+{"agent":"agy","status":"unknown"}
+target=fm-lab-agyexit-60890-19047:w1:p2 worktree=/Users/apipoj/.treehouse/scratch-project-00dcf3/1/scratch-project
+
+== wait for idle after launch turn ==
+poll 1 status=unknown
+poll 2 status=working
+poll 3 status=working
+poll 4 status=idle
+treehouse get
+apipoj@Apipojs-MBP scratch-project % treehouse get
+🌳 Setting up worktree...
+🌳 Entered worktree at ~/.treehouse/scratch-project-00dcf3/1/scratch-project. Type 'exit' to return.
+apipoj@Apipojs-MBP scratch-project % export GOTMPDIR=/tmp/fm-agyexitlive1/gotmp
+apipoj@Apipojs-MBP scratch-project % export COMPACT_ADVISER_DISABLE=1
+apipoj@Apipojs-MBP scratch-project % export FM_TASK_ID=agyexitlive1
+apipoj@Apipojs-MBP scratch-project % . '/tmp/fm-agyexitlive1+cddb595c1f9726997aeaf2629b5a8b58c6278ecd3497269810529282fe1
+d8c80/launch.s1790090454.61008.25457.sh'
+
+      ▄▀▀▄        Antigravity CLI 1.2.8
+     ▀▀▀▀▀▀       apipoj@all-in-ai.asia (Antigravity Starter Quota)
+    ▀▀▀▀▀▀▀▀      Gemini 3.8 Flash (Low)
+   ▄▀▀    ▀▀▄     ~/.treehouse/scratch-project-00dcf3/1/scratch-project
+  ▄▀▀      ▀▀▄
+
+────────────────────────────────────────────────────────────
+> FIRSTMATE_OP: v1 launch-brief: # Current worker role contract
+  You are a crewmate: an autonomous worker agent managed by firstmate.
+  This section establishes your current identity before every project or task instruction below and supersedes any
+  conflicting role identity in those instructions.
+  Do the assigned work yourself and report only to firstmate; do not adopt a firstmate or secondmate supervisor
+  identity, delegate the task, run fleet supervision, or address the captain.
+  Your steering inbox is
+  `/private/var/folders/kt/99xl2j7j343fmtn438467dgw0000gn/T/fm-agy-exit-live.dCeXly/fm-home/state/agyexitlive1.inbox`;
+  this exact path belongs to your current task even when it is outside the worktree or under the supervising firstmate
+  home, so read and acknowledge its messages and do not reject it as another home's state.
+  Never inspect or change any other home's endpoint namespace; this authorization is limited to the exact task paths
+  named by this brief.
+  When this task works on Firstmate itself, the repository root `AGENTS.md` (also imported by `CLAUDE.md`) is project
+  content and the supervisor contract for the firstmate managing you: follow this brief instead of that supervisor
+  contract.
+  Project instructions still govern the work wherever they do not conflict with this worker identity, including
+  `CONTRIBUTING.md` and `firstmate-coding-guidelines` for Firstmate changes.
+
+  # Task
+  ## Captain's intent
+  Reply with exactly AGY_EXIT_LIVE_OK and nothing else.
+
+  ## Firstmate spec
+  Do not edit files. Print AGY_EXIT_LIVE_OK and stop.
+
+  AGY_EXIT_LIVE_OK
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+>
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+? for shortcuts                                                                                   Gemini 3.8 Flash · low
+{"agent":"agy","status":"idle"}
+idle composer_state=empty
+
+== pending draft must refuse exit ==
+pending composer_state=pending
+treehouse get
+apipoj@Apipojs-MBP scratch-project % treehouse get
+🌳 Setting up worktree...
+🌳 Entered worktree at ~/.treehouse/scratch-project-00dcf3/1/scratch-project. Type 'exit' to return.
+apipoj@Apipojs-MBP scratch-project % export GOTMPDIR=/tmp/fm-agyexitlive1/gotmp
+apipoj@Apipojs-MBP scratch-project % export COMPACT_ADVISER_DISABLE=1
+apipoj@Apipojs-MBP scratch-project % export FM_TASK_ID=agyexitlive1
+apipoj@Apipojs-MBP scratch-project % . '/tmp/fm-agyexitlive1+cddb595c1f9726997aeaf2629b5a8b58c6278ecd3497269810529282fe1
+d8c80/launch.s1790090454.61008.25457.sh'
+
+      ▄▀▀▄        Antigravity CLI 1.2.8
+     ▀▀▀▀▀▀       apipoj@all-in-ai.asia (Antigravity Starter Quota)
+    ▀▀▀▀▀▀▀▀      Gemini 3.8 Flash (Low)
+   ▄▀▀    ▀▀▄     ~/.treehouse/scratch-project-00dcf3/1/scratch-project
+  ▄▀▀      ▀▀▄
+
+────────────────────────────────────────────────────────────
+> FIRSTMATE_OP: v1 launch-brief: # Current worker role contract
+  You are a crewmate: an autonomous worker agent managed by firstmate.
+  This section establishes your current identity before every project or task instruction below and supersedes any
+  conflicting role identity in those instructions.
+  Do the assigned work yourself and report only to firstmate; do not adopt a firstmate or secondmate supervisor
+  identity, delegate the task, run fleet supervision, or address the captain.
+  Your steering inbox is
+  `/private/var/folders/kt/99xl2j7j343fmtn438467dgw0000gn/T/fm-agy-exit-live.dCeXly/fm-home/state/agyexitlive1.inbox`;
+  this exact path belongs to your current task even when it is outside the worktree or under the supervising firstmate
+  home, so read and acknowledge its messages and do not reject it as another home's state.
+  Never inspect or change any other home's endpoint namespace; this authorization is limited to the exact task paths
+  named by this brief.
+  When this task works on Firstmate itself, the repository root `AGENTS.md` (also imported by `CLAUDE.md`) is project
+  content and the supervisor contract for the firstmate managing you: follow this brief instead of that supervisor
+  contract.
+  Project instructions still govern the work wherever they do not conflict with this worker identity, including
+  `CONTRIBUTING.md` and `firstmate-coding-guidelines` for Firstmate changes.
+
+  # Task
+  ## Captain's intent
+  Reply with exactly AGY_EXIT_LIVE_OK and nothing else.
+
+  ## Firstmate spec
+  Do not edit files. Print AGY_EXIT_LIVE_OK and stop.
+
+  AGY_EXIT_LIVE_OK
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+> draft that must refuse exit
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                  Gemini 3.8 Flash · low
+pending exit rc=1
+error: task agyexitlive1's composer visibly holds pending text; refusing to type the /quit exit command because it would concatenate onto that text. Clear or submit the pending text, then retry 'exit'
+{"agent":"agy","status":"idle"}
+
+== clear pending draft with backspaces ==
+cleared composer_state=empty
+
+== start a long turn then interrupt before idle exit ==
+busy-poll 1 status=idle
+busy-poll 2 status=working
+{"agent":"agy","status":"working"}
+treehouse get
+apipoj@Apipojs-MBP scratch-project % treehouse get
+🌳 Setting up worktree...
+🌳 Entered worktree at ~/.treehouse/scratch-project-00dcf3/1/scratch-project. Type 'exit' to return.
+apipoj@Apipojs-MBP scratch-project % export GOTMPDIR=/tmp/fm-agyexitlive1/gotmp
+apipoj@Apipojs-MBP scratch-project % export COMPACT_ADVISER_DISABLE=1
+apipoj@Apipojs-MBP scratch-project % export FM_TASK_ID=agyexitlive1
+apipoj@Apipojs-MBP scratch-project % . '/tmp/fm-agyexitlive1+cddb595c1f9726997aeaf2629b5a8b58c6278ecd3497269810529282fe1
+d8c80/launch.s1790090454.61008.25457.sh'
+
+      ▄▀▀▄        Antigravity CLI 1.2.8
+     ▀▀▀▀▀▀       apipoj@all-in-ai.asia (Antigravity Starter Quota)
+    ▀▀▀▀▀▀▀▀      Gemini 3.8 Flash (Low)
+   ▄▀▀    ▀▀▄     ~/.treehouse/scratch-project-00dcf3/1/scratch-project
+  ▄▀▀      ▀▀▄
+
+────────────────────────────────────────────────────────────
+> FIRSTMATE_OP: v1 launch-brief: # Current worker role contract
+  You are a crewmate: an autonomous worker agent managed by firstmate.
+  This section establishes your current identity before every project or task instruction below and supersedes any
+  conflicting role identity in those instructions.
+  Do the assigned work yourself and report only to firstmate; do not adopt a firstmate or secondmate supervisor
+  identity, delegate the task, run fleet supervision, or address the captain.
+  Your steering inbox is
+  `/private/var/folders/kt/99xl2j7j343fmtn438467dgw0000gn/T/fm-agy-exit-live.dCeXly/fm-home/state/agyexitlive1.inbox`;
+  this exact path belongs to your current task even when it is outside the worktree or under the supervising firstmate
+  home, so read and acknowledge its messages and do not reject it as another home's state.
+  Never inspect or change any other home's endpoint namespace; this authorization is limited to the exact task paths
+  named by this brief.
+  When this task works on Firstmate itself, the repository root `AGENTS.md` (also imported by `CLAUDE.md`) is project
+  content and the supervisor contract for the firstmate managing you: follow this brief instead of that supervisor
+  contract.
+  Project instructions still govern the work wherever they do not conflict with this worker identity, including
+  `CONTRIBUTING.md` and `firstmate-coding-guidelines` for Firstmate changes.
+
+  # Task
+  ## Captain's intent
+  Reply with exactly AGY_EXIT_LIVE_OK and nothing else.
+
+  ## Firstmate spec
+  Do not edit files. Print AGY_EXIT_LIVE_OK and stop.
+
+  AGY_EXIT_LIVE_OK
+
+────────────────────────────────────────────────────────────
+> Write a 1500-word essay on the history of glass. Keep writing until interrupted.
+⣻  Generating...
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+>
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+esc to cancel                                                                                     Gemini 3.8 Flash · low
+busy composer_state=unknown
+busy/interrupt exit rc=0
+stopped agyexitlive1 harness=agy backend=herdr endpoint=fm-lab-agyexit-60890-19047:w1:p2 worktree=/Users/apipoj/.treehouse/scratch-project-00dcf3/1/scratch-project
+control-plane busy exit stopped agy without a settled idle retry
+
+== second exit should be already-stopped ==
+second exit rc=0
+already-stopped agyexitlive1 harness=agy backend=herdr endpoint=fm-lab-agyexit-60890-19047:w1:p2 worktree=/Users/apipoj/.treehouse/scratch-project-00dcf3/1/scratch-project
+
+== dead-shell composer after stop ==
+treehouse get
+apipoj@Apipojs-MBP scratch-project % treehouse get
+🌳 Setting up worktree...
+🌳 Entered worktree at ~/.treehouse/scratch-project-00dcf3/1/scratch-project. Type 'exit' to return.
+apipoj@Apipojs-MBP scratch-project % export GOTMPDIR=/tmp/fm-agyexitlive1/gotmp
+apipoj@Apipojs-MBP scratch-project % export COMPACT_ADVISER_DISABLE=1
+apipoj@Apipojs-MBP scratch-project % export FM_TASK_ID=agyexitlive1
+apipoj@Apipojs-MBP scratch-project % . '/tmp/fm-agyexitlive1+cddb595c1f9726997aeaf2629b5a8b58c6278ecd3497269810529282fe1
+d8c80/launch.s1790090454.61008.25457.sh'
+
+      ▄▀▀▄        Antigravity CLI 1.2.8
+     ▀▀▀▀▀▀       apipoj@all-in-ai.asia (Antigravity Starter Quota)
+    ▀▀▀▀▀▀▀▀      Gemini 3.8 Flash (Low)
+   ▄▀▀    ▀▀▄     ~/.treehouse/scratch-project-00dcf3/1/scratch-project
+  ▄▀▀      ▀▀▄
+
+Resume with -c (or command below):
+agy --conversation=df5b6ae8-d80c-4145-8505-02f253f8a567
+
+────────────────────────────────────────────────────────────
+> FIRSTMATE_OP: v1 launch-brief: # Current worker role contract
+  You are a crewmate: an autonomous worker agent managed by firstmate.
+  This section establishes your current identity before every project or task instruction below and supersedes any
+  conflicting role identity in those instructions.
+  Do the assigned work yourself and report only to firstmate; do not adopt a firstmate or secondmate supervisor
+  identity, delegate the task, run fleet supervision, or address the captain.
+  Your steering inbox is
+  `/private/var/folders/kt/99xl2j7j343fmtn438467dgw0000gn/T/fm-agy-exit-live.dCeXly/fm-home/state/agyexitlive1.inbox`;
+  this exact path belongs to your current task even when it is outside the worktree or under the supervising firstmate
+  home, so read and acknowledge its messages and do not reject it as another home's state.
+  Never inspect or change any other home's endpoint namespace; this authorization is limited to the exact task paths
+  named by this brief.
+  When this task works on Firstmate itself, the repository root `AGENTS.md` (also imported by `CLAUDE.md`) is project
+  content and the supervisor contract for the firstmate managing you: follow this brief instead of that supervisor
+  contract.
+  Project instructions still govern the work wherever they do not conflict with this worker identity, including
+  `CONTRIBUTING.md` and `firstmate-coding-guidelines` for Firstmate changes.
+
+  # Task
+  ## Captain's intent
+  Reply with exactly AGY_EXIT_LIVE_OK and nothing else.
+
+  ## Firstmate spec
+  Do not edit files. Print AGY_EXIT_LIVE_OK and stop.
+
+  AGY_EXIT_LIVE_OK
+
+────────────────────────────────────────────────────────────
+> Write a 1500-word essay on the history of glass. Keep writing until interrupted.
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+>
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Resume with -c (or command below):
+agy --conversation=df5b6ae8-d80c-4145-8505-02f253f8a567
+apipoj@Apipojs-MBP scratch-project %
+dead composer_state=empty
+FAIL: a dead shell must not classify empty

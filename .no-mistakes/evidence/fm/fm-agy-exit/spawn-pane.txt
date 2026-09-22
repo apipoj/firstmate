@@ -1,0 +1,20 @@
+treehouse get
+apipoj@Apipojs-MBP scratch-project % treehouse get
+🌳 Setting up worktree...
+🌳 Entered worktree at ~/.treehouse/scratch-project-00dcf3/1/scratch-project. Type 'exit' to return.
+apipoj@Apipojs-MBP scratch-project % export GOTMPDIR=/tmp/fm-agyexitlive1/gotmp
+apipoj@Apipojs-MBP scratch-project % export COMPACT_ADVISER_DISABLE=1
+apipoj@Apipojs-MBP scratch-project % export FM_TASK_ID=agyexitlive1
+apipoj@Apipojs-MBP scratch-project % . '/tmp/fm-agyexitlive1+cddb595c1f9726997aeaf2629b5a8b58c6278ecd3497269810529282fe1
+d8c80/launch.s1790090454.61008.25457.sh'
+
+      ▄▀▀▄        Antigravity CLI 1.2.8
+     ▀▀▀▀▀▀       apipoj@all-in-ai.asia
+    ▀▀▀▀▀▀▀▀      Gemini 3.8 Flash (Low)
+   ▄▀▀    ▀▀▄     ~/.treehouse/scratch-project-00dcf3/1/scratch-project
+  ▄▀▀      ▀▀▄
+⢿  Generating...
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+>
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+esc to cancel                                                                                     Gemini 3.8 Flash · low
