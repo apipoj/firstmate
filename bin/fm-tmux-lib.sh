@@ -60,7 +60,7 @@ fm_tmux_strip_ghost() { fm_composer_strip_ghost; }
 #
 # These four functions are the ONLY tmux-specific composer knowledge left:
 # how to capture a styled screen, how to read the cursor row, how to probe a
-# live pi agent, and the static capability facts. Every shape, glyph, border
+# live pi or agy agent, and the static capability facts. Every shape, glyph, border
 # family, and verdict decision lives in the shared owner
 # (bin/fm-composer-lib.sh, fm_composer_classify_screen), so a new harness
 # shape is taught there once and never here.
@@ -140,7 +140,7 @@ EOF
 # pending-unproven | unknown, positive proof required for empty, unrecognized
 # future verdicts failing safe) is owned by bin/fm-composer-lib.sh. Identity
 # is fetched lazily, only when the classifier reports the verdict depends on
-# it (a pi separator pair under the cursor), so the common read never pays
+# it (a separator pair under the cursor), so the common read never pays
 # for the process probe.
 fm_tmux_composer_state() {  # <target> -> empty|pending|pending-unproven|unknown
   local target=$1 cy pane verdict identity

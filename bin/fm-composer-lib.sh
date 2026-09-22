@@ -32,9 +32,9 @@
 #               anchors shape selection: the shape containing the cursor is the
 #               composer. Without it, the bottom-most shape wins.
 #   identity=1  a native agent identity/state probe exists (herdr `agent get`;
-#               the tmux pi foreground-process probe). Identity is what makes
-#               Pi's blank separated composer provable; with identity=0 that
-#               shape stays `unknown`.
+#               the tmux foreground-process probe). Identity is what makes a
+#               separated composer provable; with identity=0 that shape stays
+#               `unknown`.
 #   rows=<n>    the capture's bounded row count (informational).
 #
 # THE STRICT BLANK-ROW RULE (captain decision blank-row-injection-posture,
@@ -122,10 +122,12 @@
 #
 # THE SAFETY RULE for glyphs: a bare shell prompt glyph (`>` `$` `%` `#`) -
 # what a pane shows once its agent has exited to a plain login shell - is a
-# genuine empty agent composer ONLY inside a bordered container. On a bare row
-# it is a dead-shell prompt and classifies `unknown` (never a safe injection
-# target). The AGENT glyphs `❯` (claude), `›` (codex), `⟩` (U+27E9, muse),
-# and `→` (U+2192, cursor) are a genuine empty agent composer either way.
+# genuine empty agent composer only inside a proven container (a bordered box,
+# or an identity-proven idle/done agy separator pair in the catalogue). On a
+# bare row it is a dead-shell prompt and classifies `unknown` (never a safe
+# injection target). The AGENT glyphs `❯` (claude), `›` (codex), `⟩`
+# (U+27E9, muse), and `→` (U+2192, cursor) are a genuine empty agent composer
+# either way.
 # Both glyph sets are declared
 # exactly once below; every decision reaches them through the declarations.
 #
@@ -540,9 +542,9 @@ fm_composer_strip_braille() {
 # boxes) from ever competing with the live composer.
 FM_COMPOSER_CAPTURE_LINES=${FM_COMPOSER_CAPTURE_LINES:-20}
 
-# Pi allows a multi-line composer between its horizontal separators. Bound the
-# structural candidate so two unrelated transcript rules with an arbitrarily
-# large region between them can never be promoted into a composer.
+# Identity-gated separator pairs (pi, agy) may hold multiple content rows.
+# Bound the structural candidate so two unrelated transcript rules with an
+# arbitrarily large region between them can never be promoted into a composer.
 FM_COMPOSER_PI_MAX_LINES=${FM_COMPOSER_PI_MAX_LINES:-8}
 
 # Column overhang of Grok 1.0.5's titled bottom border over its aligned top
@@ -827,7 +829,7 @@ _fm_composer_scan_screen() {  # <plain-screen> <cursor-or-empty> [extract-wrap]
         row_glyph_row=$row
       fi
     fi
-    # Pi separator rows: a solid `─` rule at least 8 columns wide. A separator
+    # Separator-pair rows: a solid `─` rule at least 8 columns wide. A separator
     # closes the preceding candidate and immediately opens the next, so an
     # earlier transcript rule can never outrank the live bottom composer pair.
     if _fm_composer_pi_separator_row "$trimmed"; then
