@@ -1600,6 +1600,51 @@ test_terminal_passed_with_failed_gitlab_read_reports_unknown() {
   pass "terminal passed run handles failed GitLab read"
 }
 
+# A fake curl answering every Bitbucket pull request read with one state, or
+# failing, and logging the URL it was asked for. The credentials come from the
+# environment, which bin/fm-bitbucket.sh prefers to the home's .env.
+write_bitbucket_curl() {  # <case-dir> <state|fail>
+  cat > "$1/fakebin/curl" <<SH
+#!/usr/bin/env bash
+out='' url=''
+while [ "\$#" -gt 0 ]; do
+  case "\$1" in
+    -o) out=\$2; shift 2 ;;
+    -w|-X|-H|--max-time|--data-binary) shift 2 ;;
+    -*) shift ;;
+    *) url=\$1; shift ;;
+  esac
+done
+printf '%s\n' "\$url" >> "$1/bitbucket-read.log"
+[ "$2" != fail ] || { printf '500'; exit 0; }
+printf '{"id":12,"state":"$2","draft":false,"source":{"commit":{"hash":"0123456789ab"}}}' > "\$out"
+printf '200'
+SH
+  chmod +x "$1/fakebin/curl"
+}
+
+test_terminal_passed_with_bitbucket_pr_reads_its_state() {
+  reset_fakes
+  local d url state expected out
+  url=https://bitbucket.org/AcmeWorks/demo-repo/pull-requests/12
+  for state in OPEN:open MERGED:merged DECLINED:closed SUPERSEDED:closed fail:'state unknown (unreadable)'; do
+    d=$(new_case "passed-bitbucket-${state%%:*}")
+    make_repo_on_branch "$d/wt" fm/feat-dbitbucket
+    make_fakebin "$d" >/dev/null
+    write_bitbucket_curl "$d" "${state%%:*}"
+    fm_write_meta "$d/state/feat-dbitbucket.meta" "window=fm:fm-feat-dbitbucket" \
+      "worktree=$d/wt" "kind=ship" "pr=$url"
+    FM_FAKE_AXI_STATUS="$(run_passed_with_pr fm/feat-dbitbucket "$url")"
+    expected="run passed: PR ${state#*:}"
+    out=$(BITBUCKET_EMAIL=bot@example.invalid BITBUCKET_API_TOKEN=tok \
+      run_crew_state "$d" feat-dbitbucket)
+    assert_contains "$out" "$expected" "Bitbucket ${state%%:*} pull request state is named"
+    assert_grep 'https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/pullrequests/12' \
+      "$d/bitbucket-read.log" "Bitbucket read addresses the parsed workspace and repository"
+  done
+  pass "terminal passed run reads Bitbucket pull request state"
+}
+
 test_terminal_passed_with_open_gerrit_change_does_not_claim_merged() {
   reset_fakes
   local d url read_log out
@@ -5554,6 +5599,7 @@ test_terminal_passed_without_readable_pr_identity_reports_unknown
 test_terminal_passed_with_open_gitlab_mr_does_not_claim_merged
 test_terminal_passed_with_merged_gitlab_mr_reports_merged
 test_terminal_passed_with_failed_gitlab_read_reports_unknown
+test_terminal_passed_with_bitbucket_pr_reads_its_state
 test_terminal_passed_with_open_gerrit_change_does_not_claim_merged
 test_terminal_passed_with_merged_gerrit_change_reports_merged
 test_terminal_passed_with_unreadable_gerrit_change_reports_unknown

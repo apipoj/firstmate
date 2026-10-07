@@ -39,8 +39,9 @@
 # HERE, BY THE CAPTAIN'S MANDATE: this script never tokenizes, classifies, or
 # semantically validates them, records no clause fields, ids, or verbs, and keeps
 # no per-task merge-grant list. What stays mechanical is exactly what a script can
-# check without reading words: a merge green at its live head under this record's
-# lock, synchronous merges only, the spend cap, and the never-set.
+# check without reading words: a GitHub or GitLab merge green at its live head under
+# this record's lock, synchronous merges only, no Bitbucket merge
+# (bin/fm-pr-merge.sh), the spend cap, and the never-set.
 # HARD RULE: destructive, irreversible, and security-sensitive actions are never
 # pre-authorizable whatever the words say.
 #

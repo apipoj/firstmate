@@ -8,7 +8,11 @@
 # Each provider is read through its own standard CLI, gh for GitHub, glab for
 # GitLab, and gerrit-axi for Gerrit, so an upstream checkout needs no extra
 # tooling to follow the first two. The Gerrit branch additionally needs jq,
-# which bin/fm-pr-check.sh refuses to arm a Gerrit watch without.
+# which bin/fm-pr-check.sh refuses to arm a Gerrit watch without. Bitbucket
+# Cloud has no standard CLI, so its branch runs bin/fm-bitbucket.sh from beside
+# this script, which needs curl, jq, and the Bitbucket credentials that
+# bin/fm-pr-check.sh refuses to arm a Bitbucket watch without; the
+# zero-argument copy under state/ has no such neighbour and stays silent.
 set -u
 LC_ALL=C
 export LC_ALL
@@ -67,6 +71,28 @@ case "$provider" in
     [ "$url" = "https://github.com/$owner/$repo/pull/$number" ] || exit 0
     state=$(gh pr view "$url" --json state -q .state 2>/dev/null) || exit 0
     [ "$state" = MERGED ] && printf '%s\n' merged
+    ;;
+  bitbucket)
+    [ "$host" = bitbucket.org ] || exit 0
+    workspace=${path%%/*}
+    repo=${path#*/}
+    for segment in "$workspace" "$repo"; do
+      [ "${#segment}" -ge 1 ] && [ "${#segment}" -le 100 ] || exit 0
+      case "$segment" in
+        .|..|-*|*[!A-Za-z0-9_.-]*) exit 0 ;;
+      esac
+    done
+    [ "$url" = "https://bitbucket.org/$workspace/$repo/pull-requests/$number" ] || exit 0
+    case "$0" in
+      */*) helper=${0%/*}/fm-bitbucket.sh ;;
+      *) exit 0 ;;
+    esac
+    [ -f "$helper" ] || exit 0
+    # Only the helper's exact merged=true line wakes, so an unreadable answer,
+    # a missing credential, or a changed format stays silent instead of
+    # reporting a merge.
+    raw=$(bash "$helper" state "$workspace" "$repo" "$number" 2>/dev/null) || exit 0
+    printf '%s\n' "$raw" | grep -qx 'merged=true' && printf '%s\n' merged
     ;;
   gitlab)
     [ "${#host}" -ge 1 ] && [ "${#host}" -le 253 ] || exit 0

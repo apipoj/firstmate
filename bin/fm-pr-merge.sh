@@ -4,9 +4,10 @@
 # The full canonical URL is parsed by bin/fm-pr-lib.sh. A GitHub pull request is
 # addressed through gh by the derived owner and repository; a GitLab merge
 # request is addressed through glab by the project URL rebuilt from the parsed
-# host and path, so any instance works and no host is hardcoded. A Gerrit change
-# is refused outright: that adapter is read-only, and the refusal at the parse
-# below owns why.
+# host and path, so any instance works and no host is hardcoded. A Bitbucket
+# Cloud pull request is addressed through bin/fm-bitbucket.sh by the parsed
+# workspace/repository path. A Gerrit change is refused outright: that adapter
+# is read-only, and the refusal at the parse below owns why.
 #
 # Merge method on GitHub defaults to --squash when the caller passes none of
 # --squash, --merge, --rebase, or --method after the optional -- separator.
@@ -96,13 +97,40 @@
 # recorded value stale. Reading that state needs glab and jq, and either one
 # absent stops the merge before any state is recorded.
 #
-# Before either forge merge, the task's existing per-task control lock
+# A Bitbucket merge is refused unless every pre-merge condition holds, each read
+# live at merge time through bin/fm-bitbucket.sh: the pull request is OPEN, its
+# draft flag reads false, and every build status reported at the exact current
+# head commit is SUCCESSFUL. Any other status state, including INPROGRESS,
+# FAILED, and STOPPED, refuses, and every failing condition is reported. A head
+# where no build status has reported at all is green under that rule, and a
+# notice names it. Branch restrictions and merge checks are not read, because
+# reading them needs a repository-admin scope; Bitbucket enforces them on the
+# merge call itself, and its refusal is printed in its own words with nothing
+# reported as landed. Bitbucket Cloud's merge endpoint takes no expected-head
+# parameter, so the head is re-read immediately before the merge call and a
+# change refuses; a push landing between that re-read and the merge is the
+# residual gap, which the read-back below reports when the merged head differs
+# from the verified one. The merge strategy defaults to squash; --merge selects
+# a merge commit and --squash is accepted explicitly. No other extra argument
+# applies, and the source branch is never closed. After Bitbucket accepts the
+# request, the merge counts as landed only when the merge call returned HTTP 200
+# and the pull request reads back MERGED. HTTP 202 is an accepted merge that is
+# not yet landed, as is any read-back that is not yet MERGED or cannot be read:
+# that path exits non-success, leaves the poll armed, and records no landed
+# outcome. A Bitbucket merge is attended-only while an away record exists,
+# because a 202 cannot be unbound and can land after that authority lapses, so
+# the away check refuses before the merge call.
+# Reading that state needs curl, jq, and the Bitbucket credentials, and any of
+# them absent stops the merge before any state is recorded.
+#
+# Before any forge merge, the task's existing per-task control lock
 # serializes the captain-hold check through the forge command. A still-held or
 # unreadable row refuses before that command, so a captain approval must be
 # recorded as an `answer --release` before this entrypoint is invoked. While
 # an away record exists (a quiet-mode record is a present captain, so its
-# merges stay attended: bin/fm-afk-contract.sh mode) any green merge may
-# proceed under away authority:
+# merges stay attended: bin/fm-afk-contract.sh mode) a green GitHub or GitLab
+# merge may proceed under away authority; a Bitbucket merge may not, because it
+# cannot prove an immediate landing:
 # the record's presence is the whole mechanical fact, and which merge the
 # captain's away words meant is the supervision session's reading
 # (bin/fm-branch-prompt.sh "Postures"). An unreadable record refuses rather
@@ -111,7 +139,8 @@
 # The authority read and synchronous forge command share the away record's
 # cross-subsystem lock, which bin/fm-afk-contract.sh owns, closing the common
 # live-owner TOCTOU; failure to take it refuses before the forge call. Async and
-# queued paths are refused while away. Two confused-agent-grade limitations are
+# queued paths are refused while away, and so is every Bitbucket merge.
+# Two confused-agent-grade limitations are
 # accepted rather than hidden: queue or base changes after GitHub's preflight can
 # still enqueue, and killing this shell can orphan a forge child after stale-lock
 # recovery. docs/architecture.md owns those away-merge limits, while
@@ -238,6 +267,10 @@ if [ "${#ALLOW_MISSING[@]}" -gt 0 ] && [ "$PROVIDER" = gitlab ]; then
   echo "error: --allow-missing does not apply to GitLab, where a merge already requires the head pipeline to have succeeded" >&2
   exit 2
 fi
+if [ "$PROVIDER" = bitbucket ] && [ "$((${#ALLOW_RED[@]} + ${#ALLOW_MISSING[@]}))" -gt 0 ]; then
+  echo "error: --allow-red and --allow-missing do not apply to Bitbucket, where every build status reported at the head must already be successful" >&2
+  exit 2
+fi
 
 caller_has_merge_method() {
   local arg
@@ -345,6 +378,22 @@ reject_repo_overrides "$@" || exit 1
 reject_head_overrides "$@" || exit 1
 reject_protected_forge_args "$@" || exit 1
 
+# Bitbucket has no merge CLI to forward extra arguments to, so the only ones
+# accepted choose the merge strategy, and any other is refused by name.
+BITBUCKET_STRATEGY=squash
+if [ "$PROVIDER" = bitbucket ]; then
+  for arg in "$@"; do
+    case "$arg" in
+      --squash) BITBUCKET_STRATEGY=squash ;;
+      --merge) BITBUCKET_STRATEGY=merge_commit ;;
+      *)
+        echo "error: a Bitbucket merge accepts only --squash (the default) or --merge as extra arguments, not $arg" >&2
+        exit 2
+        ;;
+    esac
+  done
+fi
+
 FM_PR_GITHUB_AUTO_REQUESTED=false
 if [ "$PROVIDER" = github ] && caller_requested_auto_merge "$@"; then
   FM_PR_GITHUB_AUTO_REQUESTED=true
@@ -397,7 +446,9 @@ MERGE_EXPECTED_SPAWN_GEN=$FM_BACKLOG_META_SPAWN_GEN
 
 MERGE_CONTROL_LOCK=
 MERGE_META_LOCK=
+BITBUCKET_ERR=
 merge_control_cleanup() {
+  [ -z "$BITBUCKET_ERR" ] || rm -f -- "$BITBUCKET_ERR"
   [ -z "$MERGE_META_LOCK" ] || fm_lock_release "$MERGE_META_LOCK" || true
   fm_afk_contract_lock_release || true
   [ -z "$MERGE_CONTROL_LOCK" ] || fm_lock_release "$MERGE_CONTROL_LOCK" || true
@@ -438,6 +489,22 @@ if [ "$PROVIDER" = github ]; then
     echo "error: merging a GitHub pull request requires $GITHUB_MISSING on PATH" >&2
     exit 1
   fi
+fi
+
+if [ "$PROVIDER" = bitbucket ]; then
+  for tool in curl jq; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+      echo "error: merging a Bitbucket pull request requires $tool on PATH" >&2
+      exit 1
+    fi
+  done
+  if ! BITBUCKET_CREDENTIALS_ERROR=$(FM_HOME="$FM_HOME" "$SCRIPT_DIR/fm-bitbucket.sh" credentials 2>&1); then
+    echo "error: merging a Bitbucket pull request requires its credentials: ${BITBUCKET_CREDENTIALS_ERROR#error: }" >&2
+    exit 1
+  fi
+  # Holds the helper's reason for a failed read, which merge_control_cleanup
+  # removes on exit.
+  BITBUCKET_ERR=$(mktemp "${TMPDIR:-/tmp}/fm-pr-merge-bitbucket.XXXXXX") || exit 1
 fi
 
 # The recorded head is read before bin/fm-pr-check.sh rewrites the metadata,
@@ -550,6 +617,125 @@ FIELDS
     "$URL" "$live_head" >&2
   FM_PR_MERGE_HEAD=$live_head
   FM_PR_GITLAB_ASYNC_CONFIGURED=$async_configured
+}
+
+bitbucket() {
+  FM_HOME="$FM_HOME" "$SCRIPT_DIR/fm-bitbucket.sh" "$1" "${PR_PATH%%/*}" "${PR_PATH#*/}" "${@:2}"
+}
+
+# One live read of the Bitbucket pull request into BITBUCKET_STATE,
+# BITBUCKET_FORGE_STATE, BITBUCKET_DRAFT, and BITBUCKET_HEAD. On failure the
+# helper's own reason is left in BITBUCKET_READ_ERROR.
+BITBUCKET_STATE=
+BITBUCKET_FORGE_STATE=
+BITBUCKET_DRAFT=
+BITBUCKET_HEAD=
+BITBUCKET_READ_ERROR=
+bitbucket_read_pr() {
+  local record
+  BITBUCKET_STATE=
+  BITBUCKET_FORGE_STATE=
+  BITBUCKET_DRAFT=
+  BITBUCKET_HEAD=
+  BITBUCKET_READ_ERROR=
+  if ! record=$(bitbucket pr "$PR_NUMBER" 2> "$BITBUCKET_ERR"); then
+    BITBUCKET_READ_ERROR=$(head -c 600 "$BITBUCKET_ERR" 2>/dev/null || true)
+    return 1
+  fi
+  BITBUCKET_STATE=$(printf '%s\n' "$record" | sed -n 's/^state=//p' | head -1)
+  BITBUCKET_FORGE_STATE=$(printf '%s\n' "$record" | sed -n 's/^forge_state=//p' | head -1)
+  BITBUCKET_DRAFT=$(printf '%s\n' "$record" | sed -n 's/^draft=//p' | head -1)
+  BITBUCKET_HEAD=$(printf '%s\n' "$record" | sed -n 's/^head=//p' | head -1)
+  fm_pr_head_valid "$BITBUCKET_HEAD" || {
+    BITBUCKET_READ_ERROR="error: Bitbucket reported no readable head commit"
+    return 1
+  }
+}
+
+# Pre-merge conditions for a Bitbucket pull request, read live. Sets
+# FM_PR_MERGE_HEAD to the verified head on success and returns non-zero after
+# reporting every condition that failed.
+bitbucket_verify_mergeable() {
+  local statuses status_state key reported=0 refusals=''
+  if ! bitbucket_read_pr; then
+    [ -z "$BITBUCKET_READ_ERROR" ] || printf '%s\n' "$BITBUCKET_READ_ERROR" >&2
+    echo "error: could not read the Bitbucket pull request state before merging" >&2
+    return 1
+  fi
+  [ "$BITBUCKET_FORGE_STATE" = OPEN ] \
+    || refusals="$refusals  - state is \"${BITBUCKET_FORGE_STATE:-unreadable}\", not OPEN
+"
+  [ "$BITBUCKET_DRAFT" = false ] \
+    || refusals="$refusals  - draft is \"${BITBUCKET_DRAFT:-unreadable}\", not false
+"
+  if ! statuses=$(bitbucket statuses "$BITBUCKET_HEAD" 2> "$BITBUCKET_ERR"); then
+    head -c 600 "$BITBUCKET_ERR" >&2 2>/dev/null || true
+    refusals="$refusals  - the build statuses at head $BITBUCKET_HEAD could not be read
+"
+  else
+    while IFS=$'\t' read -r status_state key; do
+      [ -n "$status_state" ] || continue
+      reported=$((reported + 1))
+      [ "$status_state" = SUCCESSFUL ] \
+        || refusals="$refusals  - build status \"${key:-(unnamed)}\" is $status_state at head $BITBUCKET_HEAD, not SUCCESSFUL
+"
+    done <<STATUSES
+$statuses
+STATUSES
+  fi
+  if [ -n "$refusals" ]; then
+    printf 'error: refusing to merge %s\n' "$URL" >&2
+    printf '%s' "$refusals" >&2
+    return 1
+  fi
+  if [ "$reported" -eq 0 ]; then
+    printf 'notice: no build status has reported at head %s of %s; Bitbucket still enforces its own merge checks on the merge call\n' \
+      "$BITBUCKET_HEAD" "$URL" >&2
+  fi
+  printf 'verified: %s is open and not a draft, with %s successful build status(es) at head %s\n' \
+    "$URL" "$reported" "$BITBUCKET_HEAD" >&2
+  FM_PR_MERGE_HEAD=$BITBUCKET_HEAD
+}
+
+# The last read before the merge call, because Bitbucket's merge endpoint
+# cannot bind the merge to a head the way gh's --match-head-commit and glab's
+# --sha do.
+bitbucket_head_unchanged() {
+  if ! bitbucket_read_pr; then
+    [ -z "$BITBUCKET_READ_ERROR" ] || printf '%s\n' "$BITBUCKET_READ_ERROR" >&2
+    printf 'error: could not re-read the head of %s immediately before merging; nothing was merged\n' "$URL" >&2
+    return 1
+  fi
+  if [ "$BITBUCKET_HEAD" != "$FM_PR_MERGE_HEAD" ]; then
+    printf 'error: the head of %s moved from the verified %s to %s before the merge; nothing was merged\n' \
+      "$URL" "$FM_PR_MERGE_HEAD" "$BITBUCKET_HEAD" >&2
+    return 1
+  fi
+  if [ "$BITBUCKET_FORGE_STATE" != OPEN ]; then
+    printf 'error: %s is %s, not OPEN, immediately before the merge; nothing was merged\n' \
+      "$URL" "${BITBUCKET_FORGE_STATE:-unreadable}" >&2
+    return 1
+  fi
+}
+
+# The read-back after Bitbucket accepted the merge request. Returns 0 only when
+# the pull request reads MERGED; anything else leaves the poll armed.
+bitbucket_confirm_merged() {
+  if ! bitbucket_read_pr; then
+    printf 'actionable: Bitbucket accepted the merge request for %s but it is not yet landed; its landed state could not be confirmed and the merge poll remains armed\n' \
+      "$URL" >&2
+    return 1
+  fi
+  if [ "$BITBUCKET_STATE" != MERGED ]; then
+    printf 'actionable: Bitbucket accepted the merge request for %s but it is not yet landed (reads back as %s, not merged); the merge poll remains armed\n' \
+      "$URL" "${BITBUCKET_FORGE_STATE:-unreadable}" >&2
+    return 1
+  fi
+  if [ "$BITBUCKET_HEAD" != "$FM_PR_MERGE_HEAD" ]; then
+    printf 'actionable: %s merged at head %s, not the verified head %s; a push landed between the last read and the merge\n' \
+      "$URL" "$BITBUCKET_HEAD" "$FM_PR_MERGE_HEAD" >&2
+  fi
+  printf 'verified: %s is merged (state=%s)\n' "$URL" "$BITBUCKET_FORGE_STATE"
 }
 
 # Every GitHub check that is not green in the given live pull-request JSON, one
@@ -1130,6 +1316,10 @@ require_current_away_authority() {
       echo "error: GitLab auto-merge is attended-only; while the away-posture record exists only an immediate merge may run under its authority lock" >&2
       return 2
     fi
+    if [ "$PROVIDER" = bitbucket ]; then
+      echo "error: a Bitbucket merge is attended-only; while the away-posture record exists only an immediate merge may run under its authority lock" >&2
+      return 2
+    fi
   fi
   fm_lease_forbid_branch "PR merge (fm-pr-merge)" --away-relocated
   resolve_merge_authority || return 1
@@ -1425,6 +1615,44 @@ case "$PROVIDER" in
       github_report_unmerged_outcome
       exit 1
     fi
+    ;;
+  bitbucket)
+    bitbucket_verify_mergeable || exit 1
+    # The away record is locked first, so this last presence and authority read,
+    # the head re-read, and the merge call share one live-owner critical section.
+    hold_away_record_for_merge || exit 1
+    away_status=0
+    require_current_away_authority || away_status=$?
+    [ "$away_status" -eq 0 ] || exit "$away_status"
+    bitbucket_head_unchanged || exit 1
+    merge_status=0
+    merge_output=$(bitbucket merge "$PR_NUMBER" "$BITBUCKET_STRATEGY" 2>&1) || merge_status=$?
+    if [ "$merge_status" -ne 0 ]; then
+      fm_afk_contract_lock_release || true
+      fm_lock_release "$MERGE_CONTROL_LOCK" || true
+      MERGE_CONTROL_LOCK=
+      [ -z "$merge_output" ] || printf '%s\n' "$merge_output" >&2
+      # A request that timed out may still have merged; say so rather than
+      # report it unmerged. The armed poll records the outcome either way.
+      if bitbucket_read_pr && [ "$BITBUCKET_STATE" = MERGED ]; then
+        printf 'actionable: the merge request for %s failed, but the pull request reads back as MERGED; the merge poll will record the outcome\n' \
+          "$URL" >&2
+      else
+        printf 'error: Bitbucket did not merge %s; nothing was reported as landed\n' "$URL" >&2
+      fi
+      exit 1
+    fi
+    merge_http=$(printf '%s\n' "$merge_output" | sed -n 's/^http=//p' | head -1)
+    persist_accepted_merge_authority || exit 1
+    fm_afk_contract_lock_release || true
+    fm_lock_release "$MERGE_CONTROL_LOCK" || true
+    MERGE_CONTROL_LOCK=
+    if [ "$merge_http" != 200 ]; then
+      printf 'actionable: Bitbucket accepted the merge request for %s but it is not yet landed (HTTP %s); the merge poll remains armed\n' \
+        "$URL" "${merge_http:-unreadable}" >&2
+      exit 1
+    fi
+    bitbucket_confirm_merged || exit 1
     ;;
   gitlab)
     gitlab_verify_mergeable || exit 1

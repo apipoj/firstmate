@@ -1405,6 +1405,25 @@ Arm the check once per home with `bin/fm-tool-update-check.sh arm`.
 - So a budget larger than that timeout allows is cut down to what fits instead of being refused, and the cut is reported in the report line.
 - A budget that is not a whole number from 1 to 120 is still refused outright.
 
+## Bitbucket Cloud pull requests (.env)
+
+Recording, watching, and merging a Bitbucket Cloud pull request (`https://bitbucket.org/<workspace>/<repository>/pull-requests/<n>`) goes through the REST API with an Atlassian API token, because Bitbucket has no standard CLI.
+`bin/fm-bitbucket.sh` owns that access, and its header owns the request shapes, state mapping, and error reporting.
+It is used only for Bitbucket pull requests and needs `curl` and `jq` on `PATH`.
+
+Required, in the environment or the home's gitignored `.env`, with the environment winning:
+
+```sh
+BITBUCKET_EMAIL=       # the Atlassian account email that owns the token
+BITBUCKET_API_TOKEN=   # an Atlassian API token for Bitbucket
+```
+
+Reading needs the `read:pullrequest` and `read:repository` scopes, and merging also needs `write:pullrequest`.
+Repository-admin scopes are not needed: branch restrictions and merge checks are not read, and Bitbucket enforces them on the merge call itself.
+Arming a watch or a merge refuses with the missing variable named, and a scope refusal names the scopes Bitbucket reports missing.
+Merging is attended-only while an away-posture record exists: Bitbucket can accept a merge asynchronously (HTTP 202), which cannot prove an immediate landing, so the merge is refused before the call.
+An attended merge that returns HTTP 202, or that does not yet read back merged, is not reported as landed.
+
 ## Mail plane (.env)
 
 The mail plane (bin/fm-mail.sh) reads unseen IMAP messages and sends one SMTP message.
@@ -2325,6 +2344,8 @@ FM_TEARDOWN_NM_TIMEOUT=10    # seconds allowed per no-mistakes query or abort in
 FM_CREW_STATE_RUNS_LIMIT=200  # plain runs-ledger rows scanned for fallback attribution; does not change the CLI's AXI overview window (selection owner: bin/fm-nm-run-lib.sh)
 FM_TEARDOWN_NM_RUNS_LIMIT=200  # recent no-mistakes run rows scanned to prove an unresolved-head parked run belongs to teardown's task
 FM_CREW_STATE_BIN=bin/fm-crew-state.sh   # test override for the current-state reader used by watcher triage: the working/paused classification, and the wedge timer's parked-gate wait evidence
+BITBUCKET_EMAIL=   # Bitbucket Cloud pull request access, from .env or environment (docs/configuration.md "Bitbucket Cloud pull requests")
+BITBUCKET_API_TOKEN=   # Atlassian API token paired with BITBUCKET_EMAIL
 FM_MAIL_USER=      # mail-plane IMAP/SMTP login, from .env or environment (docs/configuration.md "Mail plane")
 FM_MAIL_PASS=      # mail-plane IMAP/SMTP password
 FM_IMAP_HOST=      # mail-plane IMAP server hostname
