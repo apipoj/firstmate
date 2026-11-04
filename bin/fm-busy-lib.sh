@@ -30,7 +30,7 @@
 # never classify another adapter):
 #   pi-ext           Pi/pi-signed per-task extension (agent_start/agent_settled)
 #   omp-ext          omp (Oh My Pi) per-task extension (agent_start/agent_end without willContinue)
-#   opencode-plugin  OpenCode per-task plugin (session.status)
+#   opencode-plugin  OpenCode per-task plugin (session.execution.* and legacy session.status)
 #   claude-hook      Claude lifecycle hooks (UserPromptSubmit/Stop/StopFailure/SessionEnd)
 #   devin-hook       Devin UserPromptSubmit / Stop / SessionEnd hooks; manual
 #                    cancellation emits no Stop, so control invalidates to unknown.
@@ -107,8 +107,8 @@
 # harnesses whose rendered text is their SOLE classification, because none of
 # their structured lifecycles was credited-live-verified
 # in the approved audit (Rovo's clean ACP stopReason lives outside the TUI
-# path firstmate drives, see references/harness/rovo.md; agy 1.2.0 exposes no
-# hook surface at all, see references/harness/agy.md); each is scoped to
+# path firstmate drives, see references/harness/rovo.md; AGY's primary hooks
+# do not establish a verified worker lifecycle source, see references/harness/agy.md); each is scoped to
 # its own harness= and can never classify another adapter.
 # Kiro is different: its kiro-hook record above is its ONLY state source (a
 # live-verified per-turn userPromptSubmit/stop pair, references/harness/kiro.md),
@@ -999,8 +999,8 @@ fm_busy_rovo_tail_busy() {
 # shows `? for shortcuts` instead). The `Generating...` spinner word that
 # renders beside it is deliberately NOT matched: it is a free-floating output
 # line, so ordinary worker output echoing the word would classify an idle
-# worker as busy. agy exposes no hook surface, so this fallback is the only
-# pane-side source; it is never armed as a semantic writer
+# worker as busy. No AGY worker lifecycle source is verified, so this fallback
+# is the only pane-side source; it is never armed as a semantic writer
 # (fm_busy_sources_for_harness trusts nothing for agy).
 fm_busy_agy_tail_busy() {
   grep -v '^[[:space:]]*$' | tail -12 \

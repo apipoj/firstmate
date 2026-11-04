@@ -293,8 +293,8 @@ fm_pr_url_parse() {
   fi
   # A Bitbucket Cloud pull request URL is
   # https://bitbucket.org/<workspace>/<repository>/pull-requests/<number>, and
-  # Bitbucket Cloud runs on that one host, so the host is a constant as it is
-  # for GitHub. Bitbucket matches a workspace or repository slug without regard
+  # Bitbucket Cloud runs on that one host, so its host is a constant.
+  # Bitbucket matches a workspace or repository slug without regard
   # to case, but the URL is kept as given rather than folded, exactly as a
   # GitHub URL is, because every consumer re-derives the identity from the
   # stored URL and the spelling a task reported is the one it records.
