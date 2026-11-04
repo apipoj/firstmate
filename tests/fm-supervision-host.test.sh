@@ -70,6 +70,7 @@ test_attended_routine_wake_is_handled_on_the_engine_and_stays_off_main() {
   assert_not_contains "$drained" "mark-processed" "a routine outcome must ask for no acknowledgement"
   drained=$(FM_HOME="$home" "$FAKE_CLAUDE" -c '"$0" 2>&1' "$ROOT/bin/fm-wake-drain.sh")
   assert_not_contains "$drained" "[seq 1]" "a routine outcome must be listed only once"
+  stop_home_processes "$home"
   pass "host: an attended wake the branch may take is handled on the engine, and its routine outcome never wakes main"
 }
 
@@ -123,6 +124,7 @@ test_engine_in_another_time_zone_handles_its_granted_rows() {
   assert_no_grep 'no branch-eligible row snapshot' "$home/engine-drain.1" "engine tz: the engine's drain discarded the host's grant"
   assert_no_grep 'demo.status' "$home/state/.wake-queue" "engine tz: the engine's acknowledgement did not consume the wake"
   [ ! -s "$home/host.rc" ] || fail "engine tz: the handled wake reached main: $(cat "$home/host.out")"
+  stop_home_processes "$home"
   pass "host: an engine in another time zone than the host drains, reports, and acknowledges its granted rows"
 }
 
@@ -154,6 +156,7 @@ test_attended_captain_outcome_reaches_main_through_branch_outcomes() {
     || fail "main's acknowledgement of the presented outcome was refused"
   drained=$(FM_HOME="$home" "$FAKE_CLAUDE" -c '"$0" 2>&1' "$ROOT/bin/fm-wake-drain.sh")
   assert_not_contains "$drained" "BRANCH OUTCOMES" "an acknowledged captain outcome must not be presented again"
+  stop_home_processes "$home"
   pass "host: an attended captain outcome wakes main once and stays in its drain until main acknowledges it"
 }
 
@@ -173,6 +176,7 @@ test_captain_leaving_mid_turn_keeps_its_captain_outcome_for_the_return() {
   FM_HOME="$home" "$CONTRACT" archive >/dev/null 2>&1 || fail "fixture: could not archive the away posture"
   drained=$(FM_HOME="$home" "$FAKE_CLAUDE" -c '"$0" 2>&1' "$ROOT/bin/fm-wake-drain.sh")
   assert_contains "$drained" " ago] demo: stub handled demo" "after the return the drain must present the away window's captain outcome"
+  stop_home_processes "$home"
   pass "host: a captain outcome recorded after the captain left waits for the return, then reaches main's drain"
 }
 
@@ -201,6 +205,7 @@ test_quiet_record_without_its_daemon_is_a_present_captain() {
   assert_contains "$drained" " ago] demo: stub escalated: " "the section must carry the outcome"
   [ -f "$home/state/.afk-contract" ] || fail "the host must leave quiet mode's record in place"
 
+  stop_home_processes "$home"
   home=$(make_home quiet-main-only quiet)
   start_host "$home"
   wait_until 150 watcher_live "$home" || fail "quiet main-only: the host never started a watcher cycle"
@@ -209,6 +214,7 @@ test_quiet_record_without_its_daemon_is_a_present_captain() {
   assert_re '^signal: .*demo.status' "$home/host.out" "the decision close must reach main as the arm printed it"
   [ "$(engine_calls "$home")" -eq 0 ] || fail "quiet main-only: the engine took a decision close from a present captain"
   assert_re '	pass-through	attended	main-only	signal:' "$home/state/.supervision-host.log" "the ledger must record the attended main-only pass-through"
+  stop_home_processes "$home"
   pass "host: a quiet record without its daemon is a present captain, so outcomes and decisions reach main"
 }
 
@@ -225,6 +231,7 @@ test_attended_main_only_close_passes_straight_to_main() {
   [ "$(engine_calls "$home")" -eq 0 ] || fail "main-only: the engine ran for a decision close"
   assert_grep 'demo.status' "$home/state/.wake-queue" "the decision wake must stay queued for main"
   assert_re '	pass-through	attended	main-only	signal:' "$home/state/.supervision-host.log" "the ledger must record why the close went to main"
+  stop_home_processes "$home"
   pass "host: an attended decision close stays main's exactly as the plain arm delivers it"
 }
 
@@ -275,6 +282,7 @@ test_main_only_pass_through_leaves_the_successor_watcher_running() {
   sleep 2
   kill -0 "$pid" 2>/dev/null || fail "successor: the watcher exited after the pass-through (pid $pid)"
   [ "$(cat "$home/state/.watch.lock/pid" 2>/dev/null)" = "$pid" ] || fail "successor: the watcher lock moved after the pass-through"
+  stop_home_processes "$home"
   pass "host: a main-only pass-through leaves the successor watcher running and the close undelivered for main"
 }
 
@@ -307,6 +315,7 @@ test_attended_close_with_unidentified_main_session_passes_to_main() {
   assert_grep 'demo.status' "$home/state/.wake-queue" "the wake must stay queued for main"
   assert_re '	pass-through	attended	the main session could not be identified	signal:' "$home/state/.supervision-host.log" \
     "the ledger must record why the close went to main"
+  stop_home_processes "$home"
   pass "host: an attended close whose main session cannot be identified reaches main and runs no engine turn"
 }
 
@@ -345,6 +354,7 @@ SH
   assert_re '	pass-through	attended	main-only	signal:' "$home/state/.supervision-host.log" "the ledger must record why the close went to main"
   assert_no_re '	no-op	' "$home/state/.supervision-host.log" "the close must not be treated as handled"
   watcher_live "$home" || fail "the pass-through left no successor watcher"
+  stop_home_processes "$home"
   pass "host: a decision close accepted away whose turn starts attended still reaches main unchanged"
 }
 
@@ -372,6 +382,7 @@ test_attended_close_that_turns_main_only_before_its_turn_passes_to_main() {
   [ "$pi_offer" = true ] || fail "the host-only transition veto changed Pi's existing offer rule"
   assert_re '	pass-through	attended	main-only	signal:' "$home/state/.supervision-host.log" "the ledger must record why the close went to main"
   watcher_live "$home" || fail "the pass-through left no successor watcher"
+  stop_home_processes "$home"
   pass "host: an attended close whose task turns main-only before its turn still reaches main unchanged"
 }
 
@@ -395,6 +406,7 @@ test_primary_without_a_verified_mirror_runs_away_only() {
     [ "$(engine_calls "$home")" -eq 0 ] || fail "$harness: the engine ran an attended wake without a verified dialog mirror"
     assert_re "	pass-through	attended	no verified dialog mirror for $harness	" "$home/state/.supervision-host.log" \
       "the ledger must record that no verified mirror kept the close on main"
+    stop_home_processes "$home"
   done
   home=$(make_home away-grok away claude)
   FM_SUPERVISION_HOST_PRIMARY=grok start_host "$home"
@@ -407,6 +419,7 @@ test_primary_without_a_verified_mirror_runs_away_only() {
   [ ! -s "$home/host.rc" ] || fail "a handled away wake on grok reached main: $(cat "$home/host.out")"
   kill -TERM "$(awk -F '\t' '$1 == "host" { print $2 }' "$home/state/.supervision-host")"
   wait_until_deadline 60 host_exited "$home" || fail "away grok: the host did not stop on TERM"
+  stop_home_processes "$home"
   pass "host: a primary with no verified dialog mirror keeps every attended close on main, and its away posture still runs"
 }
 
@@ -430,6 +443,7 @@ test_attended_wake_carries_the_dialog_mirror() {
   second="$home/engine-call.2"
   assert_re '^arg=--resume$' "$second" "fixture: the second turn did not resume the conversation"
   assert_no_re 'MAIN DIALOG MIRROR' "$second" "a resumed conversation must not be fed dialog it already has"
+  stop_home_processes "$home"
   pass "host: each wake carries the captain's dialog since the last wake, without operational input"
 }
 
@@ -468,6 +482,7 @@ SH
   [ "$(mode_of "$home/state/.host-mirror.jsonl")" = 600 ] || fail "the dialog mirror must be owner-only, got $(mode_of "$home/state/.host-mirror.jsonl")"
   [ "$(mode_of "$home/state/.supervision-host-wake")" = 600 ] || fail "the wake file must be owner-only, got $(mode_of "$home/state/.supervision-host-wake")"
   [ "$(cat "$home/feed-modes" 2>/dev/null)" = 600 ] || fail "the mirror feed must be owner-only, got $(cat "$home/feed-modes" 2>/dev/null)"
+  stop_home_processes "$home"
   pass "host: the dialog mirror, its feed, and the wake file are owner-only"
 }
 
@@ -555,6 +570,7 @@ SH
   wait_until 250 handled_at_least "$home" 4 || fail "mirror boundary: the wake after the unreported turn was not handled: $(cat "$home/state/.supervision-host.log")"
   fourth="$home/engine-call.6"
   assert_re '^\[captain\] fourth ask, turn unreported$' "$fourth" "dialog of a turn that recorded no report must reach the next turn"
+  stop_home_processes "$home"
   pass "host: dialog a turn never completed with its report (a park boundary, a stopped turn, no report) reaches the next turn"
 }
 
@@ -622,6 +638,7 @@ test_attended_wake_with_an_unreadable_mirror_reaches_main() {
   [ "$(engine_calls "$home")" -eq 1 ] || fail "bad mirror: the engine ran past a malformed mirror entry"
   [ "$(cat "$home/state/.host-mirror-cursor")" = "$cursor" ] || fail "a malformed mirror entry moved the cursor"
   [ ! -e "$home/state/.host-mirror-cursor.next" ] || fail "a malformed mirror entry staged a cursor past it"
+  stop_home_processes "$home"
   pass "host: an attended wake whose mirror is missing, cannot be read (at the feed or at the prompt), or holds a malformed entry reaches main before any engine turn, and the cursor stays put"
 }
 
@@ -679,6 +696,7 @@ test_away_wake_is_handled_on_the_engine_and_never_reaches_main() {
   expect_code 143 "$(cat "$home/host.rc")" "a TERMed host must exit 143"
   wait_until 100 sh -c '! kill -0 "$1" 2>/dev/null' _ "$watcher" || fail "a stopped host left its watcher running"
   assert_absent "$home/state/.supervision-host" "a stopped host left its record"
+  stop_home_processes "$home"
   pass "host: an away wake is handled on the engine through the branch contract and never reaches main"
 }
 
@@ -701,6 +719,7 @@ test_away_turn_without_a_report_hands_the_wake_to_main() {
     *) fail "a handback must leave the recovery marker in downtime for the owner's rewake, got: $token" ;;
   esac
   assert_absent "$home/state/.supervision-host-engine" "a turn that did not handle its wake must not keep its conversation"
+  stop_home_processes "$home"
   pass "host: an engine turn that records no outcome hands its durable wake to main"
 }
 
@@ -722,6 +741,7 @@ test_return_during_an_engine_turn_hands_its_outcomes_to_main() {
   assert_re '	handled	turn=' "$home/state/.supervision-host.log" "the turn itself was handled"
   assert_no_grep 'demo.status' "$home/state/.wake-queue" "the handled wake must stay acknowledged"
   watcher_live "$home" && fail "the host left its successor cycle running when it handed the outcome to main"
+  stop_home_processes "$home"
   pass "host: a captain return during an engine turn hands that turn's outcomes to main"
 }
 
@@ -754,6 +774,7 @@ test_silent_outcomes_are_not_relayed_when_the_captain_returns() {
       "$mode: a silent outcome was referenced in the captain-return handoff"
     assert_grep '"silent":true' "$home/state/branch-outcomes.jsonl" "$mode: the silent outcome was not retained in the store"
     assert_absent "$home/state/.afk-contract" "$mode: the captain return was not archived"
+    stop_home_processes "$home"
   done
   pass "host: silent outcomes are excluded from both captain-return handoff paths"
 }
@@ -773,6 +794,7 @@ test_large_turn_relays_an_early_visible_outcome() {
   assert_re '^supervision-host: outcome 1 for demo \[routine\]: stub handled demo$' "$home/host.out" \
     "many receipts: the early visible outcome was lost behind later silent rows"
   assert_no_grep 'bulk silent fixture' "$home/host.out" "many receipts: silent outcomes were relayed"
+  stop_home_processes "$home"
   pass "host: an early visible outcome survives more than 1,000 same-turn receipts"
 }
 
@@ -788,6 +810,7 @@ test_outcome_lookup_failure_is_not_treated_as_silence() {
     "$home/host.out" "lookup failure: the main handoff did not explain the lookup failure"
   assert_re '^supervision-host: outcome lookup failed for turn receipt rows 1; visible outcomes may require manual review$' \
     "$home/host.out" "lookup failure: the missing outcome warning was not emitted"
+  stop_home_processes "$home"
   pass "host: an outcome lookup failure forces a visible main handoff"
 }
 
@@ -825,6 +848,7 @@ test_outcome_after_the_return_survives_a_host_killed_at_the_turn_end() {
   drained=$(FM_HOME="$home" "$ROOT/bin/fm-wake-drain.sh" 2>&1)
   assert_contains "$drained" "supervision-host outcome 1 for demo [routine] was recorded after the captain returned" \
     "main's drain must present the outcome the killed host never handed off"
+  stop_home_processes "$home"
   pass "host: an outcome recorded after the return reaches main even when its host dies at the turn's end"
 }
 
@@ -856,6 +880,7 @@ test_next_host_clears_a_turn_its_killed_predecessor_left() {
     [ -e "$f" ] && fail "the next host left its killed predecessor's turn file behind: $f"
   done
   assert_re '^check: rearm-resurface$' "$home/host.out" "the next host's first cycle must resurface the queue"
+  stop_home_processes "$home"
   pass "host: a killed predecessor's engine is reaped and the next host removes its turn files"
 }
 
@@ -876,6 +901,7 @@ test_report_without_acknowledgement_hands_the_wake_to_main() {
   assert_re '	failed	turn=.*	unacked=[0-9]' "$home/state/.supervision-host.log" "the ledger must record the turn as failed"
   assert_absent "$home/state/.supervision-host-engine" "a turn that did not handle its wake must not keep its conversation"
   watcher_live "$home" && fail "the host left its successor cycle running when it handed the wake to main"
+  stop_home_processes "$home"
   pass "host: a turn that reports but leaves its granted rows queued hands the wake to main"
 }
 
@@ -894,6 +920,7 @@ test_return_during_a_failed_turn_still_hands_its_outcomes_to_main() {
   assert_re '^supervision-host: outcome 1 for demo \[routine\]: stub handled demo$' "$home/host.out" \
     "the handback must carry the failed turn's outcome for main to relay"
   assert_re '	failed	turn=' "$home/state/.supervision-host.log" "the turn itself failed"
+  stop_home_processes "$home"
   pass "host: a captain return during a failed engine turn still hands that turn's outcomes to main"
 }
 
@@ -913,6 +940,7 @@ test_incomplete_engine_result_hands_the_wake_to_main() {
   assert_re '	failed	turn=.*	error=1 ' "$home/state/.supervision-host.log" "the ledger must record the turn as failed"
   assert_no_re '	handled	turn=' "$home/state/.supervision-host.log" "an incomplete result must never count as handled"
   assert_absent "$home/state/.supervision-host-engine" "a turn that did not handle its wake must not keep its conversation"
+  stop_home_processes "$home"
   pass "host: an engine turn whose result is incomplete hands its wake to main"
 }
 
