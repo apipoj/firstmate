@@ -940,6 +940,23 @@ EOF
   pass "locked session start freezes trace context and lock refusal leaves it unchanged"
 }
 
+# Wait until <dir> holds <count> entries. Forty workers poll this at once, so
+# the count is a builtin glob rather than a find pipeline (no process per
+# poll), and the wait ends early once the directory is gone, the suite has
+# died, or FM_TEST_STUB_MAX_BLOCK_SECONDS has passed, so an interrupted run
+# cannot leave forty pollers spinning under init.
+lock_concurrency_barrier() {  # <dir> <count>
+  local dir=$1 want=$2 start=$SECONDS entries
+  while [ -d "$dir" ] && kill -0 "$FM_TEST_SUITE_PID" 2>/dev/null \
+    && [ $((SECONDS - start)) -lt "$FM_TEST_STUB_MAX_BLOCK_SECONDS" ]; do
+    entries=("$dir"/*)
+    [ -e "${entries[0]}" ] || entries=()
+    [ "${#entries[@]}" -lt "$want" ] || return 0
+    sleep 0.05
+  done
+  return 1
+}
+
 test_session_lock_concurrent_single_winner() {
   local rec root home fakebin ready completed winners pids i pid count
   rec=$(new_world lock-concurrency)
@@ -975,7 +992,13 @@ case "$*" in
       printf '%s\n' bash
     fi
     ;;
-  *"ppid="*) printf '%s\n' "$FM_FAKE_HARNESS_PID" ;;
+  *"ppid="*)
+    if [ -f "$FM_FAKE_LOCK_STATE/harness-$pid" ]; then
+      printf '%s\n' 1
+    else
+      printf '%s\n' "$FM_FAKE_HARNESS_PID"
+    fi
+    ;;
   *) exit 1 ;;
 esac
 SH
@@ -988,24 +1011,20 @@ SH
       harness_pid=$(sh -c 'printf "%s\n" "$PPID"')
       : > "$home/state/harness-$harness_pid"
       : > "$ready/$i"
-      while [ "$(find "$ready" -type f | wc -l | tr -d ' ')" -lt 40 ]; do
-        sleep 0.01
-      done
+      lock_concurrency_barrier "$ready" 40 || exit 1
       if FM_HOME="$home" FM_FAKE_LOCK_STATE="$home/state" \
         FM_FAKE_HARNESS_PID="$harness_pid" PATH="$fakebin:$BASE_PATH" \
         "$ROOT/bin/fm-lock.sh" >/dev/null 2>&1; then
         printf '%s\n' "$harness_pid" >> "$winners"
       fi
       : > "$completed/$i"
-      while [ "$(find "$completed" -type f | wc -l | tr -d ' ')" -lt 40 ]; do
-        sleep 0.01
-      done
+      lock_concurrency_barrier "$completed" 40 || exit 1
     ) &
     pids="$pids $!"
     i=$((i + 1))
   done
   for pid in $pids; do
-    wait "$pid" 2>/dev/null || true
+    wait "$pid" 2>/dev/null || fail "session-lock contender did not complete both barriers"
   done
   count=$(awk 'NF { count++ } END { print count + 0 }' "$winners")
   [ "$count" -eq 1 ] || fail "concurrent session-lock acquisition produced $count winners"
