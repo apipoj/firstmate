@@ -524,6 +524,26 @@ test_away_merge_is_refused() {
   pass "a Bitbucket merge is refused before the POST while an away record exists"
 }
 
+test_expected_head_pins_the_merge() {
+  local d out rc
+  d=$(make_case merge-expected-head-mismatch)
+  route_green_pr "$d"
+  rc=0
+  out=$(run_pr_merge "$d" task-b1 "$URL" --expected-head "$OTHER_SHA" 2>&1) || rc=$?
+  [ "$rc" -ne 0 ] || fail "merge-expected-head-mismatch: merged a head other than the expected one"
+  assert_contains "$out" "the live head is \"$HEAD_SHA\", not the expected head $OTHER_SHA" \
+    "merge-expected-head-mismatch: the mismatch was not named"
+  assert_equals 0 "$(merge_posts "$d")" "merge-expected-head-mismatch: the merge was attempted"
+  assert_absent "$d/state/task-b1.pr-poll-merge-notified" "merge-expected-head-mismatch: an outcome was recorded"
+
+  d=$(make_case merge-expected-head-match)
+  route_green_pr "$d"
+  out=$(run_pr_merge "$d" task-b1 "$URL" --expected-head "$HEAD_SHA" 2>&1) \
+    || fail "merge-expected-head-match: the matching expected head was refused: $out"
+  assert_equals 1 "$(merge_posts "$d")" "merge-expected-head-match: expected exactly one merge call"
+  pass "a Bitbucket merge honours --expected-head and refuses a different live head before the merge call"
+}
+
 test_merge_arguments_and_prerequisites() {
   local d out rc
   d=$(make_case merge-args)
@@ -557,6 +577,7 @@ test_arming_records_pr_without_head_and_refuses_drafts
 test_green_merge_squashes_and_reads_back
 test_red_or_pending_statuses_refuse
 test_head_drift_refuses
+test_expected_head_pins_the_merge
 test_forge_refusal_is_surfaced
 test_unconfirmed_merge_leaves_poll_armed
 test_away_merge_is_refused

@@ -59,7 +59,9 @@
 # reviewed. It must be one full lowercase hex commit of 40 or 64 characters,
 # given once as its own argument. The initial live head must equal it or the
 # request is refused before any forge write. The forge head match receives that same
-# supplied value on GitHub, GitLab, and Forgejo. A later preflight in this run
+# supplied value on GitHub, GitLab, and Forgejo; Bitbucket has no forge head
+# match, so its verified head, which the pre-merge re-read must still equal, is
+# the supplied value. A later preflight in this run
 # does not replace it with a newly read head. Omitting the flag keeps the
 # previous behavior: the live head read at verification is the matched value.
 # Reading that state needs gh and jq, and either one absent stops the merge before any
@@ -1077,6 +1079,9 @@ bitbucket_verify_mergeable() {
   [ "$BITBUCKET_DRAFT" = false ] \
     || refusals="$refusals  - draft is \"${BITBUCKET_DRAFT:-unreadable}\", not false
 "
+  note_expected_head "$BITBUCKET_HEAD"
+  refusals="$refusals${FM_PR_EXPECTED_HEAD_REFUSAL:+$FM_PR_EXPECTED_HEAD_REFUSAL
+}"
   if ! statuses=$(bitbucket statuses "$BITBUCKET_HEAD" 2> "$BITBUCKET_ERR"); then
     head -c 600 "$BITBUCKET_ERR" >&2 2>/dev/null || true
     refusals="$refusals  - the build statuses at head $BITBUCKET_HEAD could not be read
