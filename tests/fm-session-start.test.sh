@@ -992,7 +992,13 @@ case "$*" in
       printf '%s\n' bash
     fi
     ;;
-  *"ppid="*) printf '%s\n' "$FM_FAKE_HARNESS_PID" ;;
+  *"ppid="*)
+    if [ -f "$FM_FAKE_LOCK_STATE/harness-$pid" ]; then
+      printf '%s\n' 1
+    else
+      printf '%s\n' "$FM_FAKE_HARNESS_PID"
+    fi
+    ;;
   *) exit 1 ;;
 esac
 SH
@@ -1005,20 +1011,20 @@ SH
       harness_pid=$(sh -c 'printf "%s\n" "$PPID"')
       : > "$home/state/harness-$harness_pid"
       : > "$ready/$i"
-      lock_concurrency_barrier "$ready" 40
+      lock_concurrency_barrier "$ready" 40 || exit 1
       if FM_HOME="$home" FM_FAKE_LOCK_STATE="$home/state" \
         FM_FAKE_HARNESS_PID="$harness_pid" PATH="$fakebin:$BASE_PATH" \
         "$ROOT/bin/fm-lock.sh" >/dev/null 2>&1; then
         printf '%s\n' "$harness_pid" >> "$winners"
       fi
       : > "$completed/$i"
-      lock_concurrency_barrier "$completed" 40
+      lock_concurrency_barrier "$completed" 40 || exit 1
     ) &
     pids="$pids $!"
     i=$((i + 1))
   done
   for pid in $pids; do
-    wait "$pid" 2>/dev/null || true
+    wait "$pid" 2>/dev/null || fail "session-lock contender did not complete both barriers"
   done
   count=$(awk 'NF { count++ } END { print count + 0 }' "$winners")
   [ "$count" -eq 1 ] || fail "concurrent session-lock acquisition produced $count winners"

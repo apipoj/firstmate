@@ -36,16 +36,8 @@ mkdir -p "$FAKEBIN"
 
 HERDR_LAB_SESSION=$("$HERDR_LAB_HELPER" name fm-herdr-focus-flash-regression-r1)
 export HERDR_LAB_HELPER HERDR_LAB_SESSION HERDR_ORIGINAL_PATH
-SAMPLER_PID=
-SAMPLER_STOP=
 cleanup() {
   local status=$?
-  if [ -n "$SAMPLER_STOP" ]; then
-    : > "$SAMPLER_STOP"
-  fi
-  if [ -n "$SAMPLER_PID" ]; then
-    wait "$SAMPLER_PID" 2>/dev/null || true
-  fi
   env PATH="$HERDR_ORIGINAL_PATH" "$HERDR_LAB_HELPER" teardown "$HERDR_LAB_SESSION" || status=1
   rm -rf "$TMP_ROOT"
   exit "$status"
@@ -89,6 +81,11 @@ focus_snapshot() {
   printf '%s' "$tabs" | jq -e --arg tab "$tab" '([.result.tabs[] | select(.focused == true)] | length) == 1 and ([.result.tabs[] | select(.focused == true)][0].tab_id == $tab)' >/dev/null || return 1
   printf '%s\t%s' "$workspace" "$tab"
 }
+# Observe the real CLI boundary synchronously: in particular, pane close must
+# be sampled before the production caller can restore focus. A background
+# sampler can miss that entire interval on a busy runner.
+export -f lab focus_snapshot
+
 ws_order() { lab workspace list | jq -er '[.result.workspaces[].workspace_id] | join(",")'; }
 wait_ws_gone() {  # <workspace_id>
   local i=0
@@ -138,48 +135,26 @@ B_SURVIVOR_ORDER=$(ws_order | tr ',' '\n' | grep -v "^$B_DOOMED_WS\$" | paste -s
 
 CALL_LOG="$TMP_ROOT/call.log"
 B_FOCUS_SAMPLES="$TMP_ROOT/focus.samples"
-B_OPERATION_ACTIVE="$TMP_ROOT/operation.active"
-B_SAMPLER_READY="$TMP_ROOT/sampler.ready"
-SAMPLER_STOP="$TMP_ROOT/sampler.stop"
 : > "$CALL_LOG"
 : > "$B_FOCUS_SAMPLES"
-(
-  : > "$B_SAMPLER_READY"
-  while [ ! -e "$SAMPLER_STOP" ]; do
-    if [ -e "$B_OPERATION_ACTIVE" ]; then
-      if B_SAMPLE=$(focus_snapshot); then
-        printf '%s\n' "$B_SAMPLE" >> "$B_FOCUS_SAMPLES"
-      else
-        printf '%s\n' UNREADABLE >> "$B_FOCUS_SAMPLES"
-      fi
-    fi
-  done
-) &
-SAMPLER_PID=$!
-B_READY_ATTEMPT=0
-while [ ! -e "$B_SAMPLER_READY" ] && [ "$B_READY_ATTEMPT" -lt 100 ]; do
-  sleep 0.01
-  B_READY_ATTEMPT=$((B_READY_ATTEMPT + 1))
-done
-[ -e "$B_SAMPLER_READY" ] || fail 'the Part B focus sampler did not start'
-: > "$B_OPERATION_ACTIVE"
-B_OUT=$(PATH="$FAKEBIN:$HERDR_ORIGINAL_PATH" FM_FLASH_CALL_LOG="$CALL_LOG" bash -c '
+B_OUT=$(PATH="$FAKEBIN:$HERDR_ORIGINAL_PATH" FM_FLASH_CALL_LOG="$CALL_LOG" \
+  FM_FLASH_FOCUS_LOG="$B_FOCUS_SAMPLES" bash -c '
   . "$1/bin/backends/herdr.sh"
   fm_backend_herdr_cli() {
-    local session=$1
+    local session=$1 status sample
     shift
     printf "%s\n" "$*" >> "$FM_FLASH_CALL_LOG"
     HERDR_SESSION="$session" herdr "$@" --session "$session"
+    status=$?
+    sample=$(focus_snapshot) || sample=UNREADABLE
+    printf "%s\n" "$sample" >> "$FM_FLASH_FOCUS_LOG"
+    return "$status"
   }
   fm_backend_herdr_projection_close_pane_focus_preserving "$2" "$3"
 ' _ "$ROOT" "$HERDR_LAB_SESSION" "$B_DOOMED_PANE" 2>&1)
 B_STATUS=$?
-rm -f "$B_OPERATION_ACTIVE"
-: > "$SAMPLER_STOP"
-wait "$SAMPLER_PID" 2>/dev/null || true
-SAMPLER_PID=
 [ "$B_STATUS" -eq 0 ] || fail "the production focus-preserving close failed (status $B_STATUS): $B_OUT"
-[ -s "$B_FOCUS_SAMPLES" ] || fail 'the Part B sampler captured no focus sample during the production close'
+[ -s "$B_FOCUS_SAMPLES" ] || fail 'Part B captured no CLI-boundary focus sample during the production close'
 B_WRONG_SAMPLE=$(grep -Fvx -- "$B_BEFORE" "$B_FOCUS_SAMPLES" | head -1)
 if [ -n "$B_WRONG_SAMPLE" ]; then
   fail "the mitigation exposed a wrong or unreadable in-operation focus sample ($B_BEFORE -> $B_WRONG_SAMPLE)"
@@ -268,50 +243,28 @@ done
 
 C_CALL_LOG="$TMP_ROOT/call-c.log"
 C_FOCUS_SAMPLES="$TMP_ROOT/focus-c.samples"
-C_OPERATION_ACTIVE="$TMP_ROOT/operation-c.active"
-C_SAMPLER_READY="$TMP_ROOT/sampler-c.ready"
-SAMPLER_STOP="$TMP_ROOT/sampler-c.stop"
 : > "$C_CALL_LOG"
 : > "$C_FOCUS_SAMPLES"
-(
-  : > "$C_SAMPLER_READY"
-  while [ ! -e "$SAMPLER_STOP" ]; do
-    if [ -e "$C_OPERATION_ACTIVE" ]; then
-      if C_SAMPLE=$(focus_snapshot); then
-        printf '%s\n' "$C_SAMPLE" >> "$C_FOCUS_SAMPLES"
-      else
-        printf '%s\n' UNREADABLE >> "$C_FOCUS_SAMPLES"
-      fi
-    fi
-  done
-) &
-SAMPLER_PID=$!
-C_READY_ATTEMPT=0
-while [ ! -e "$C_SAMPLER_READY" ] && [ "$C_READY_ATTEMPT" -lt 100 ]; do
-  sleep 0.01
-  C_READY_ATTEMPT=$((C_READY_ATTEMPT + 1))
-done
-[ -e "$C_SAMPLER_READY" ] || fail 'the Part C focus sampler did not start'
-: > "$C_OPERATION_ACTIVE"
 # A short proof budget keeps the exhausted-proof path fast; the count below is
 # what proves the proof was exhausted rather than skipped.
 C_PROOF_POLLS=3
 C_OUT=$(PATH="$FAKEBIN:$HERDR_ORIGINAL_PATH" FM_FLASH_CALL_LOG="$C_CALL_LOG" \
+  FM_FLASH_FOCUS_LOG="$C_FOCUS_SAMPLES" \
   FM_BACKEND_HERDR_IDLE_SHELL_PROOF_POLLS="$C_PROOF_POLLS" bash -c '
   . "$1/bin/backends/herdr.sh"
   fm_backend_herdr_cli() {
-    local session=$1
+    local session=$1 status sample
     shift
     printf "%s\n" "$*" >> "$FM_FLASH_CALL_LOG"
     HERDR_SESSION="$session" herdr "$@" --session "$session"
+    status=$?
+    sample=$(focus_snapshot) || sample=UNREADABLE
+    printf "%s\n" "$sample" >> "$FM_FLASH_FOCUS_LOG"
+    return "$status"
   }
   fm_backend_herdr_projection_close_pane_focus_preserving "$2" "$3"
 ' _ "$ROOT" "$HERDR_LAB_SESSION" "$C_DOOMED_PANE" 2>&1)
 C_STATUS=$?
-rm -f "$C_OPERATION_ACTIVE"
-: > "$SAMPLER_STOP"
-wait "$SAMPLER_PID" 2>/dev/null || true
-SAMPLER_PID=
 [ "$C_STATUS" -eq 0 ] || fail "the production focus-preserving close failed (status $C_STATUS): $C_OUT"
 wait_ws_gone "$C_DOOMED_WS" || fail 'the fallback close left the doomed workspace behind'
 if lab pane get "$C_DOOMED_PANE" >/dev/null 2>&1; then
@@ -333,6 +286,8 @@ pass 'fallback: a doomed pane holding a persistent child exhausts the proof and 
 C_AFTER=$(focus_snapshot) || fail 'could not capture the Part C post-close focus'
 [ "$C_AFTER" = "$C_BEFORE" ] \
   || fail "the fallback close left focus off the anchor ($C_BEFORE -> $C_AFTER)"
+[ -s "$C_FOCUS_SAMPLES" ] || fail 'Part C captured no CLI-boundary focus sample during the production close'
+grep -Fxq UNREADABLE "$C_FOCUS_SAMPLES" && fail 'Part C could not read focus at a CLI boundary'
 C_WRONG=$(grep -Fvxc -- "$C_BEFORE" "$C_FOCUS_SAMPLES" || true)
 if [ "$STEAL_LIVE" = 1 ]; then
   # A defective release cannot make this path focus-safe, which is precisely why
@@ -341,7 +296,7 @@ if [ "$STEAL_LIVE" = 1 ]; then
   # must have put the anchor back exactly, and the whole exposure must end with
   # the operation rather than parking the captain somewhere else.
   [ "$C_WRONG" -ge 1 ] \
-    || fail 'Part C reached the fallback on a defective release but observed no wrong-focus sample at all, so the sampler proved nothing'
+    || fail 'Part C reached the fallback on a defective release but observed no wrong focus at the explicit-close boundary'
   pass "fallback on a defective release: a bounded wrong-focus window of $C_WRONG samples was fully restored to the anchor"
 else
   [ "$C_WRONG" -eq 0 ] \

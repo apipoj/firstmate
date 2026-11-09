@@ -5,9 +5,10 @@
 #
 # The stored identity is provider-tagged: provider, url, host, path, number.
 # "path" is the full project path, which is owner/repository on GitHub and
-# Forgejo, an arbitrarily nested group/subgroup/project namespace on GitLab, and
-# an arbitrarily nested project name on Gerrit, where "number" is the change
-# number. A GitLab or Gerrit project can sit at any depth, so no
+# Forgejo, workspace/repository on Bitbucket Cloud, an arbitrarily nested
+# group/subgroup/project namespace on GitLab, and an arbitrarily nested project
+# name on Gerrit, where "number" is the change number. A GitLab or Gerrit
+# project can sit at any depth, so no
 # owner/repository pair can address one and the sidecar carries the whole path
 # instead. GitLab, Gerrit, and Forgejo all run on self-hosted instances, and
 # Gerrit runs nowhere else, so the host is part of that identity rather than a
@@ -129,16 +130,18 @@ fm_task_id_creation_valid() {
 # GitLab, Gerrit, and Forgejo all serve self-hosted instances, so the host is part of the
 # identity rather than a constant. It is accepted only as a lowercase DNS name
 # with no userinfo, port, or trailing dot, which keeps one canonical spelling per
-# change. github.com is refused here even though its shape is otherwise valid:
-# it is GitHub's own host and never another forge's instance, so a URL like
-# https://github.com/o/r/-/merge_requests/1 (a typo'd or spoofed GitHub URL)
-# would otherwise be armed as a watch that can never succeed.
+# change. github.com and bitbucket.org are refused here even though their shape
+# is otherwise valid: each is one hosted forge's own host and never another
+# forge's instance, so a URL like https://github.com/o/r/-/merge_requests/1 (a
+# typo'd or spoofed pull request URL) would otherwise be armed as a watch that
+# can never succeed.
 fm_pr_forge_host_valid() {
   local host=${1-} label
   local LC_ALL=C
   local -a labels
   [ "${#host}" -ge 1 ] && [ "${#host}" -le 253 ] || return 1
   [ "$host" != github.com ] || return 1
+  [ "$host" != bitbucket.org ] || return 1
   case "$host" in
     .*|*.|*..*|*[!a-z0-9.-]*) return 1 ;;
   esac
@@ -250,14 +253,16 @@ fm_pr_github_host_export() {  # <host>
 
 # Parse a canonical pull request, merge request, or Gerrit change URL into the
 # provider-tagged identity. Validation is strict and per provider: the GitHub
-# username and repository rules are unchanged, and GitLab, Gerrit, and Forgejo
-# each get their own namespace rules rather than a loosened GitHub rule.
+# username and repository rules are unchanged, and Bitbucket, GitLab, Gerrit,
+# and Forgejo each get their own namespace rules rather than a loosened GitHub
+# rule.
 #
 # FM_PR_OWNER and FM_PR_REPO are additionally set for github and forgejo
-# because bin/fm-pr-merge.sh addresses both by owner/repository. A gitlab or
-# gerrit URL leaves them empty, and those paths address the project by FM_PR_HOST and
-# FM_PR_PATH instead, so a change on any instance resolves without a hardcoded
-# host.
+# because bin/fm-pr-merge.sh addresses both by owner/repository. A bitbucket,
+# gitlab, or gerrit URL leaves them empty, and those paths address the project
+# by FM_PR_HOST and FM_PR_PATH instead. GitLab, Gerrit, and Forgejo resolve any
+# instance without a hardcoded host, while Bitbucket Cloud is only
+# bitbucket.org.
 fm_pr_url_parse() {
   local raw=${1-} pattern host path
   local LC_ALL=C
@@ -284,6 +289,25 @@ fm_pr_url_parse() {
     # shellcheck disable=SC2034
     FM_PR_REPO=${BASH_REMATCH[3]}
     FM_PR_NUMBER=${BASH_REMATCH[4]}
+    return 0
+  fi
+  # A Bitbucket Cloud pull request URL is
+  # https://bitbucket.org/<workspace>/<repository>/pull-requests/<number>, and
+  # Bitbucket Cloud runs on that one host, so its host is a constant.
+  # Bitbucket matches a workspace or repository slug without regard
+  # to case, but the URL is kept as given rather than folded, exactly as a
+  # GitHub URL is, because every consumer re-derives the identity from the
+  # stored URL and the spelling a task reported is the one it records.
+  pattern='^https://bitbucket\.org/([A-Za-z0-9_.-]{1,100})/([A-Za-z0-9_.-]{1,100})/pull-requests/([1-9][0-9]*)$'
+  if [[ "$raw" =~ $pattern ]]; then
+    case "${BASH_REMATCH[1]}" in .|..|-*) return 1 ;; esac
+    case "${BASH_REMATCH[2]}" in .|..|-*) return 1 ;; esac
+    [ "${#BASH_REMATCH[3]}" -le 18 ] || return 1
+    FM_PR_PROVIDER=bitbucket
+    FM_PR_URL=$raw
+    FM_PR_HOST=bitbucket.org
+    FM_PR_PATH="${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
+    FM_PR_NUMBER=${BASH_REMATCH[3]}
     return 0
   fi
   # The path class contains "/" and "-", so this match is greedy to the last
@@ -1138,6 +1162,46 @@ fm_pr_gitlab_read_record() {  # <host> <path> <number>
 $fields
 FIELDS
   if [ "$named" -ne 2 ] || [ "$total" -ne 2 ] || [ -z "$state" ] \
+    || { [ "$merged" != true ] && [ "$merged" != false ]; }; then
+    return 1
+  fi
+
+  # Consumed by bin/fm-crew-state.sh passed_pr_detail.
+  # shellcheck disable=SC2034
+  FM_PR_RECORD_STATE=$state
+  # Consumed by bin/fm-crew-state.sh passed_pr_detail.
+  # shellcheck disable=SC2034
+  FM_PR_RECORD_MERGED=$merged
+}
+
+# The state of one Bitbucket Cloud pull request, read through
+# bin/fm-bitbucket.sh, which owns the REST access, credentials, and the mapping
+# of Bitbucket's states onto OPEN, MERGED, and CLOSED.
+fm_pr_bitbucket_read_record() {  # <workspace/repository> <number>
+  local path=$1 number=$2 fields line helper
+  local total=0 named=0 state='' merged=''
+  FM_PR_RECORD_STATE=
+  FM_PR_RECORD_MERGED=
+  helper="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/fm-bitbucket.sh"
+  case "$path" in
+    */*/*|/*|*/) return 1 ;;
+    */*) ;;
+    *) return 1 ;;
+  esac
+  fields=$(FM_HOME="${FM_HOME-}" "$helper" state "${path%%/*}" "${path#*/}" "$number" 2>/dev/null) || return 1
+  while IFS= read -r line; do
+    total=$((total + 1))
+    case "$line" in
+      state=*) state=${line#state=} ;;
+      merged=*) merged=${line#merged=} ;;
+      forge_state=*) ;;
+      *) continue ;;
+    esac
+    named=$((named + 1))
+  done <<FIELDS
+$fields
+FIELDS
+  if [ "$named" -ne 3 ] || [ "$total" -ne 3 ] || [ -z "$state" ] \
     || { [ "$merged" != true ] && [ "$merged" != false ]; }; then
     return 1
   fi
