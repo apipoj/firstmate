@@ -1,0 +1,4 @@
+interface:
+  display_name: "Asking"
+  short_description: "Stress-test decisions one question round at a time"
+  default_prompt: "Interview me to resolve this plan before anyone acts."
