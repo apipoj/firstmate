@@ -1,0 +1,24 @@
+
+===== merge object =====
+tree 6d943b9cb74c1a69454410e5d76db63b8e47c8c5
+parent 52f890f3922acfc1a95a2025fd52c764bc8d7cd4
+parent 427056c4181c41074ad24f051f79919330df0fa5
+author Apipoj Piasak <apipoj@all-in-ai.asia> 1794588218 +0700
+committer Apipoj Piasak <apipoj@all-in-ai.asia> 1794588218 +0700
+
+Merge upstream/main into fork
+first-parent 52f890f3922acfc1a95a2025fd52c764bc8d7cd4
+second-parent 427056c4181c41074ad24f051f79919330df0fa5
+expected-fork-tip 52f890f3922acfc1a95a2025fd52c764bc8d7cd4
+expected-upstream 427056c4181c41074ad24f051f79919330df0fa5
+unique-commits-not-in-either-parent 1
+upstream-commits-now-contained 22
+upstream tip is an ancestor (not rewritten)
+fork tip is first-parent ancestor
+pr6-parents 2e0a5baef705a58ccb6836b13c0ab05800f68b2e 1d43f9cb797836015aecb5aa4c6e14cb3124c1f0
+pr6-subject Merge upstream/main into the fork, keeping Bitbucket Cloud support
+this-subject Merge upstream/main into fork
+fork-parent-had-fm-park no
+merge-has-fm-park yes
+merge-has-fm-bitbucket yes
+conflict-markers 0

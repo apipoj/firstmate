@@ -1,0 +1,27 @@
+
+===== newer running beside handed_off =====
+synthetic overview:
+count: 2 of 2 total
+runs[2]{id,branch,status,head,pr}:
+  "01NEW",fm/competing,running,bc7c89d2,""
+  "01OLD",fm/competing,handed_off,bc7c89d2,""
+rc=0
+state: working · source: run-step · validating (running) · run: 01NEW
+
+===== no-mistakes invocations =====
+axi status
+axi
+axi status --run 01NEW
+
+===== newer running beside an unrecognized status =====
+synthetic overview:
+count: 2 of 2 total
+runs[2]{id,branch,status,head,pr}:
+  "01NEW",fm/competing,running,bc7c89d2,""
+  "01OLD",fm/competing,not_a_status,bc7c89d2,""
+rc=0
+state: unknown · source: run-step · unrecognized run status; run ids: 01NEW, 01OLD; last reported run id: 01NEW
+
+===== no-mistakes invocations =====
+axi status
+axi

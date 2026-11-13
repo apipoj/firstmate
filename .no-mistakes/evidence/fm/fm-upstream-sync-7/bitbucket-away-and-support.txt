@@ -1,0 +1,100 @@
+
+===== away enter =====
+Away posture recorded at 2026-11-13T17:10:37Z: hold-for-return only. No phone channel is configured; anything that needs you waits for your return. Your away instructions are recorded verbatim; the away session will carry them out where it can, and anything it is unsure of, or that needs you, waits for your return. Destructive, irreversible, and security-sensitive actions are never pre-authorizable, whatever the words say. Expected return: not given. Spend cap: 4 concurrent workers.
+Away posture (recorded):
+  entered: 2026-11-13T17:10:37Z
+  expected return: not given
+  spend cap: 4 concurrent workers
+  reach: hold-for-return only. No phone channel is configured; anything that needs you waits for your return.
+  your words (verbatim):
+    merge when green
+away-mode away
+
+===== away bitbucket merge =====
+rc=2
+error: a Bitbucket merge is attended-only; while the away-posture record exists the merge waits for the captain's return
+
+===== curl log after away merge =====
+(no forge request)
+
+===== merge outcome marker =====
+no landed outcome recorded
+
+===== away plus attended-override =====
+rc=2
+error: a Bitbucket merge is attended-only; while the away-posture record exists the merge waits for the captain's return
+
+===== curl log after override attempt =====
+(no forge request)
+
+===== quiet enter =====
+Quiet mode recorded at 2026-11-13T17:10:38Z: you are present, so nothing waits for your return: every action you ask for, a local landing or a merge included, proceeds now under ordinary attended authority, and quiet mode changes only which updates reach this conversation. Only an explicit /quiet off ends it.
+Quiet mode (recorded):
+  entered: 2026-11-13T17:10:38Z
+  holds: none - you are present, so nothing waits for your return: every action you ask for, a local landing or a merge included, proceeds now under ordinary attended authority, and quiet mode changes only which updates reach this conversation.
+  your words (verbatim):
+    I am here
+quiet-mode quiet
+
+===== quiet bitbucket merge =====
+rc=0
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e {run-worktree}/.pi/extensions/fm-primary-turnend-guard.ts -e {run-worktree}/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+armed: state/task-b1.check.sh
+verified: https://bitbucket.org/AcmeWorks/demo-repo/pull-requests/5 is open and not a draft, with 1 successful build status(es) at head 0123456789abcdef0123456789abcdef01234567
+verified: https://bitbucket.org/AcmeWorks/demo-repo/pull-requests/5 is merged (state=MERGED)
+
+===== curl log after quiet merge =====
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/pullrequests/5
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/commit/0123456789ab
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/pullrequests/5
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/commit/0123456789ab
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/commit/0123456789abcdef0123456789abcdef01234567/statuses?pagelen=100
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/pullrequests/5
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/commit/0123456789ab
+POST https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/pullrequests/5/merge
+BODY {"merge_strategy":"squash","close_source_branch":false}
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/pullrequests/5
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/commit/0123456789ab
+
+===== missing credentials =====
+rc=1
+error: merging a Bitbucket pull request requires its credentials: Bitbucket access needs BITBUCKET_EMAIL and BITBUCKET_API_TOKEN, and neither is set in the environment or /var/folders/px/qv3hbs5d7c54zn4jxzbcxjjr0000gp/T//fm-lab.REphHp/.env
+
+===== curl log after missing credentials =====
+(no forge request)
+
+===== draft pr-check =====
+rc=1
+error: https://bitbucket.org/AcmeWorks/demo-repo/pull-requests/5 is a draft pull request; a draft cannot be merged, so merge monitoring would wait for an event that cannot occur - mark it ready for review and arm again, or declare a wait instead of done if the draft is deliberate
+poll not armed
+pr not recorded
+
+===== curl log after draft check =====
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/pullrequests/5
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/commit/0123456789ab
+
+===== non-draft pr-check expects a remote refresh then an unreachable-head refusal =====
+rc=0
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e {run-worktree}/.pi/extensions/fm-primary-turnend-guard.ts -e {run-worktree}/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+armed: state/task-b1.check.sh
+poll armed
+
+===== git commands =====
+git -C {run-worktree} rev-parse --is-inside-work-tree
+git -C {run-worktree} symbolic-ref --quiet --short HEAD
+
+===== curl log =====
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/pullrequests/5
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/commit/0123456789ab

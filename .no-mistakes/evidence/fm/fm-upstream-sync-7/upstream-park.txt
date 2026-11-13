@@ -1,0 +1,22 @@
+
+===== park list on an empty lab =====
+rc=0
+[]
+
+===== park gate with no recorded pr =====
+rc=1
+fm-park: could not read the PR for task-b1 from its forge
+
+===== park help names the review-park contract =====
+fm-park.sh - park a ship lane whose PR or MR only awaits human review, watch
+it while its agent is stopped, relaunch a fresh worker on review activity,
+and clean the lane up once the merge poll sees it merged.
+
+Usage:
+  fm-park.sh gate <task-id> [--expect-head <sha>]
+  fm-park.sh park <task-id>
+  fm-park.sh resume <task-id> --trigger <text>
+  fm-park.sh land <task-id> [--if-eligible] [--detach]
+  fm-park.sh tick
+  fm-park.sh list
+  fm-park.sh run <task-id> park|resume|land [<args>...]   (internal)
