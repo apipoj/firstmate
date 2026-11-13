@@ -1,0 +1,23 @@
+exit=0
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e {run-worktree}/.pi/extensions/fm-primary-turnend-guard.ts -e {run-worktree}/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+armed: state/task-b1.check.sh
+verified: https://bitbucket.org/AcmeWorks/demo-repo/pull-requests/5 is open and not a draft, with 2 successful build status(es) at head 0123456789abcdef0123456789abcdef01234567
+verified: https://bitbucket.org/AcmeWorks/demo-repo/pull-requests/5 is merged (state=MERGED)
+--- curl.log ---
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/pullrequests/5 auth=ok
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/commit/0123456789ab auth=ok
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/pullrequests/5 auth=ok
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/commit/0123456789ab auth=ok
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/commit/0123456789abcdef0123456789abcdef01234567/statuses?pagelen=100 auth=ok
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/pullrequests/5 auth=ok
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/commit/0123456789ab auth=ok
+POST https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/pullrequests/5/merge auth=ok
+body {"merge_strategy":"squash","close_source_branch":false}
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/pullrequests/5 auth=ok
+GET https://api.bitbucket.org/2.0/repositories/AcmeWorks/demo-repo/commit/0123456789ab auth=ok

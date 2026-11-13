@@ -1,0 +1,3 @@
+exit=6
+error: PR merge (fm-pr-merge) refused - the supervision branch never performs this action; report the outcome and leave it to main (role partition: docs/pi-supervision-branch.md)
+--- curl.log ---

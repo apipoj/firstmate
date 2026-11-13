@@ -1,0 +1,5 @@
+has-session -t =fm-demo
+capture-pane -p -t fm-demo -S -40
+capture-pane -p -t fm-demo -S -40
+capture-pane -p -t fm-demo -S -40
+capture-pane -p -t fm-demo -S -40

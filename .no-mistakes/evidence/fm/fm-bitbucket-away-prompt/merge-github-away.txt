@@ -1,0 +1,8 @@
+exit=1
+note: PR merge (fm-pr-merge) proceeds for the supervision branch under the away-posture record: main is parked and its standing authority is relocated; this script's own gate still applies (docs/pi-supervision-branch.md "Postures")
+note: PR merge (fm-pr-merge) proceeds for the supervision branch under the away-posture record: main is parked and its standing authority is relocated; this script's own gate still applies (docs/pi-supervision-branch.md "Postures")
+armed: state/task-b1.check.sh
+error: could not read the GitHub pull request state before merging
+--- gh.log ---
+pr view https://github.com/acme/demo/pull/9 --json headRefOid -q .headRefOid
+pr view https://github.com/acme/demo/pull/9 --json state,isDraft,mergeable,mergeStateStatus,headRefOid,baseRefName,statusCheckRollup

@@ -1,0 +1,4 @@
+exit=2
+note: PR merge (fm-pr-merge) proceeds for the supervision branch under the away-posture record: main is parked and its standing authority is relocated; this script's own gate still applies (docs/pi-supervision-branch.md "Postures")
+error: GitLab auto-merge is attended-only; while the away-posture record exists only an immediate merge may run under its authority lock
+--- glab.log ---

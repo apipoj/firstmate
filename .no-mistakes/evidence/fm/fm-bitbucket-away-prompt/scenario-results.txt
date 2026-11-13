@@ -1,0 +1,16 @@
+=== scenario: host delivers branch prompt and away wake ===
+host lab: /private/var/folders/px/qv3hbs5d7c54zn4jxzbcxjjr0000gp/T/fm-lab.UKLxXV
+away record written
+host parent pid 49067
+watcher live
+engine received wake
+host stopped
+fake tmux was invoked (5 calls); it exited 1 and did not reach a real server
+PASS host: delivered prompt and away wake hold Bitbucket merges for the return
+=== scenario: merge script enforcement ===
+PASS away-branch: Bitbucket merge refused before any merge POST; message waits for the captain
+PASS attended: the same green Bitbucket pull request merges when the captain is present
+PASS github-away: GitHub pull request while away was not refused as Bitbucket; fake gh was invoked and made no network call
+PASS attended-branch: an attended branch is still refused before any forge call
+PASS gitlab-away: GitLab auto-merge while away still says only an immediate merge may run, and glab was not called
+=== done ===
