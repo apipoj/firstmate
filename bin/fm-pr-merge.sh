@@ -1840,7 +1840,7 @@ require_current_away_authority() {
       return 2
     fi
     if [ "$PROVIDER" = bitbucket ]; then
-      echo "error: a Bitbucket merge is attended-only; while the away-posture record exists only an immediate merge may run under its authority lock" >&2
+      echo "error: a Bitbucket merge is attended-only; while the away-posture record exists the merge waits for the captain's return" >&2
       return 2
     fi
   fi

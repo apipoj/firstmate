@@ -2241,6 +2241,18 @@ const readback = contract(["readback"]);
 if (!readback.endsWith("    merge task-d when green, then cut the prerelease\n    \n")) throw new Error(`the read-back lost the captain's words or their trailing blank line: ${JSON.stringify(readback)}`);
 if (!awayPrompt.includes("act on them by your own judgment")) throw new Error(`the away tail lost the words-execution rule: ${awayPrompt}`);
 if (awayPrompt.includes("does not execute them")) throw new Error(`the away tail still calls the words inert: ${awayPrompt}`);
+// Emitted away tail, the decision-time contract both hosts append. Oracle: a
+// Bitbucket pull request stays attended-only while the away record exists and
+// waits for the captain's return. The wrong tail still grants every green merge.
+if (awayPrompt.includes("merges any pull request that is green at its live head")) {
+  throw new Error(`the away tail still grants every green merge, including Bitbucket: ${awayPrompt}`);
+}
+if (!awayPrompt.includes("other than a Bitbucket one")) {
+  throw new Error(`the away tail does not exclude a Bitbucket pull request from the green merge: ${awayPrompt}`);
+}
+if (!awayPrompt.includes("stays attended-only while the away record exists and waits for the captain's return")) {
+  throw new Error(`the away tail does not hold a Bitbucket pull request for the captain's return: ${awayPrompt}`);
+}
 if (!awayPrompt.endsWith(`The record, verbatim:\n${readback}`)) throw new Error(`the tail does not end with the record's read-back verbatim, trailing whitespace included: ${JSON.stringify(awayPrompt)}`);
 const snapshot = readFileSync(`${home}/state/.branch-eligible-rows`, "utf8").trim().split("\n").join(",");
 if (snapshot !== "1,2,3") throw new Error(`the away wake claimed rows ${snapshot}, not every row`);

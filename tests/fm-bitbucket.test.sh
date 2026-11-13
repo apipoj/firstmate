@@ -519,6 +519,8 @@ test_away_merge_is_refused() {
   expect_code 2 "$rc" "merge-away: an away Bitbucket merge was not refused: $out"
   assert_contains "$out" "attended-only" "merge-away: the refusal did not name attended-only"
   assert_contains "$out" "away-posture record" "merge-away: the refusal did not name the away record"
+  assert_contains "$out" "waits for the captain's return" "merge-away: the refusal did not wait for the captain's return"
+  assert_not_contains "$out" "immediate merge may run" "merge-away: the refusal still invites an immediate merge"
   assert_equals 0 "$(merge_posts "$d")" "merge-away: a merge POST was made"
   assert_absent "$d/state/task-b1.pr-poll-merge-notified" "merge-away: an outcome was recorded"
   pass "a Bitbucket merge is refused before the POST while an away record exists"

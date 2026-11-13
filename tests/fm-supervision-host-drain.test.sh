@@ -156,6 +156,14 @@ test_dispatch_entry_scopes_rows_and_renders_the_away_tail() {
   assert_contains "$out" "FIRSTMATE SUPERVISION WAKE: signal: demo.status" "the wake prompt must carry the reason"
   assert_contains "$out" "finish with the bin/fm-branch-report.sh command." "the wake prompt must name the host's report surface"
   assert_contains "$out" "POSTURE: AWAY." "an away wake prompt must carry the posture tail"
+  # Same emitted-tail contract as the Pi wake: Bitbucket stays attended-only
+  # and waits for the captain's return. The wrong tail grants every green merge.
+  assert_not_contains "$out" "merges any pull request that is green at its live head" \
+    "the away tail still grants every green merge, including Bitbucket"
+  assert_contains "$out" "other than a Bitbucket one" \
+    "the away tail does not exclude a Bitbucket pull request from the green merge"
+  assert_contains "$out" "stays attended-only while the away record exists and waits for the captain's return" \
+    "the away tail does not hold a Bitbucket pull request for the captain's return"
   assert_contains "$out" "    merge nothing" "the away tail must carry the record's read-back verbatim"
   pass "dispatch entry: the host reads branch eligibility, the offer rule, and the wake prompt from the Pi branch's own owner"
 }
