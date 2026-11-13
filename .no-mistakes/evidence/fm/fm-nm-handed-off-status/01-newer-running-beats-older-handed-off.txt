@@ -1,0 +1,60 @@
+===== 01-newer-running-beats-older-handed-off =====
+worktree: /private/var/folders/px/qv3hbs5d7c54zn4jxzbcxjjr0000gp/T/fm-lab.K9oUMZ/wt
+binary: {run-worktree}/bin/fm-crew-state.sh
+----- no-mistakes axi -----
+bin: ~/.no-mistakes/bin/no-mistakes
+description: "Validate your code changes through the no-mistakes pipeline - automated code review, tests, lint, docs, push, PR, and CI - before they reach the configured push target. Use when the user asks to run no-mistakes, gate or ship or validate their changes, push safely, asks you to do a task and then validate it, or invokes /no-mistakes."
+repo: /private/var/folders/px/qv3hbs5d7c54zn4jxzbcxjjr0000gp/T/fm-lab.K9oUMZ/wt
+current_branch: fm/handoff-live
+daemon: running
+active_run:
+  id: "01M7A82SAY0000000000000002"
+  branch: fm/handoff-live
+  status: running
+  head: cc664807
+  head_sha: cc664807097ae2fc0af6092d7e789755db6bbd8b
+  verification_plan: none
+  findings: none
+  steps[0]:
+count: 2 of 2 total
+runs[2]{id,branch,status,head,pr}:
+  "01M7A82SAY0000000000000002",fm/handoff-live,running,cc664807,""
+  "01M7A80YQY0000000000000001",fm/handoff-live,handed_off,cc664807,""
+help[4]: Run `no-mistakes axi status` to inspect the active run,"Commit post-pipeline follow-up work on top of the existing branch so every pipeline fix commit remains present. Never abort-and-restart, reset, or replace the branch in a way that drops prior gate-fix commits.",The calling agent drives AXI gates but does not replace the configured pipeline agent; run `no-mistakes doctor` if no native agent or ACP runner is available,"How to drive the pipeline: `no-mistakes axi run --help`, or the `/no-mistakes` skill (loaded when you invoke `/no-mistakes`)"
+----- no-mistakes axi status -----
+run:
+  id: "01M7A82SAY0000000000000002"
+  branch: fm/handoff-live
+  status: running
+  head: cc664807
+  head_sha: cc664807097ae2fc0af6092d7e789755db6bbd8b
+  verification_plan: none
+  findings: none
+  steps[0]:
+----- no-mistakes axi status --run 01M7A82SAY0000000000000002 -----
+run:
+  id: "01M7A82SAY0000000000000002"
+  branch: fm/handoff-live
+  status: running
+  head: cc664807
+  head_sha: cc664807097ae2fc0af6092d7e789755db6bbd8b
+  verification_plan: none
+  findings: none
+  steps[0]:
+----- no-mistakes axi status --run 01M7A80YQY0000000000000001 -----
+run:
+  id: "01M7A80YQY0000000000000001"
+  branch: fm/handoff-live
+  status: handed_off
+  head: cc664807
+  head_sha: cc664807097ae2fc0af6092d7e789755db6bbd8b
+  verification_plan: none
+  findings: none
+  steps[0]:
+outcome: handed-off
+----- no-mistakes runs -----
+  running      fm/handoff-live      cc664807  2026-11-13 17:50
+  handed_off   fm/handoff-live      cc664807  2026-11-13 17:48
+----- fm-crew-state -----
+state: working · source: run-step · validating (running) · run: 01M7A82SAY0000000000000002
+exit:0
