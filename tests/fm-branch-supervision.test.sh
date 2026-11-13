@@ -153,6 +153,30 @@ test_branch_prompt_routes_completed_scouts_through_guarded_cleanup() {
   pass "emitted branch prompt routes completed scouts through existing policies and leased cleanup, preserving unfinished work"
 }
 
+test_branch_prompt_states_bitbucket_merges_are_attended_only_while_away() {
+  local prompt
+  prompt=$(bash "$ROOT/bin/fm-branch-prompt.sh") || fail "branch prompt generator failed"
+
+  # The emitted system prompt is the contract, not the generator's source or
+  # proof that a model will obey it. A Bitbucket merge is refused before the
+  # POST while the away record exists, green or not (bin/fm-pr-merge.sh;
+  # tests/fm-bitbucket.test.sh test_away_merge_is_refused), so the pr-merge
+  # posture bullet must not offer away authority for one.
+  assert_contains "$prompt" \
+    "any green merge other than a Bitbucket one is mechanically permitted while the record exists." \
+    "branch prompt still offers away authority for a Bitbucket green merge"
+  assert_contains "$prompt" \
+    "A Bitbucket pull request is never merged while the record exists, green or not" \
+    "branch prompt omits the Bitbucket away refusal"
+  assert_contains "$prompt" \
+    "so a Bitbucket merge holds for the return." \
+    "branch prompt does not send a Bitbucket merge to the return brief"
+  assert_not_contains "$prompt" \
+    "any green merge is mechanically permitted while the record exists." \
+    "branch prompt still states the old no-exception green-merge rule"
+  pass "emitted branch prompt states the Bitbucket merge is attended-only while away, matching bin/fm-pr-merge.sh"
+}
+
 # --- append-only outcome store ------------------------------------------------
 
 test_outcome_store_is_append_only_with_cursor_reads() {
@@ -1658,6 +1682,7 @@ WRAPPER
 test_branch_prompt_is_byte_stable_and_above_cache_floor
 test_branch_prompt_home_include_is_appended_last
 test_branch_prompt_routes_completed_scouts_through_guarded_cleanup
+test_branch_prompt_states_bitbucket_merges_are_attended_only_while_away
 test_outcome_store_is_append_only_with_cursor_reads
 test_outcome_append_keeps_a_bounded_display_tail
 test_outcome_tail_keeps_whole_newest_rows_within_its_byte_budget
