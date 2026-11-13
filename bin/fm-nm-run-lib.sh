@@ -317,7 +317,9 @@ fm_nm_select_run() {  # <branch> <axi-overview> <worktree> [timeout_secs]
       }
       if (first == "") { first = id; first_status = st }
       if (st == "running" || st == "pending") live++
-      if (st !~ /^(pending|running|completed|failed|cancelled)$/) unknown_status = 1
+      # handed_off is the terminal superseded marker a supported axi sync
+      # hand-off records on this branch; never live, so the newer run decides.
+      if (st !~ /^(pending|running|completed|failed|cancelled|handed_off)$/) unknown_status = 1
       next
     }
     inrows { inrows = 0 }
@@ -495,7 +497,7 @@ fm_nm_run_is_parked() {  # <toon-output>
 # daemon-down probe for exactly that reason.
 # All four accepted words reach here on BOTH surfaces. The overview table
 # fm_nm_select_run validates carries a narrower column
-# (pending|running|completed|failed|cancelled, its unknown_status check), but that column is not
+# (pending|running|completed|failed|cancelled|handed_off, its unknown_status check), but that column is not
 # what this predicate reads: the selected-run route re-reads the run by id and
 # passes that DETAIL object, whose own vocabulary check admits `fixing` and `ci`
 # as live, and the legacy bare-status route passes the same detail shape.
