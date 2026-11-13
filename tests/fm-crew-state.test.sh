@@ -5476,9 +5476,10 @@ branch_sync:
 
 # The same live run reads working for every EXECUTING status word the CLI can
 # actually deliver here. `fm_nm_select_run` validates the overview status column
-# against pending|running|completed|failed|cancelled, so those are the only live
-# words that reach the predicate; the overview and the id-addressed detail read
-# the same runs.status column, so the fixture carries one word in BOTH surfaces.
+# against pending|running|completed|failed|cancelled plus the terminal handed_off,
+# so those are the only live words that reach the predicate; the overview and the
+# id-addressed detail read the same runs.status column, so the fixture carries one
+# word in BOTH surfaces.
 test_live_rebased_run_reads_working_for_every_executing_status() {
   local status d rebased out
   for status in pending running; do
@@ -5495,6 +5496,23 @@ test_live_rebased_run_reads_working_for_every_executing_status() {
     assert_not_contains "$out" 'state: failed' "$status run with a rebased head is never failed"
     pass "$status run with a rebased head reads working"
   done
+}
+
+# A supported `axi sync` hand-off marks the superseded run handed_off and starts
+# a newer running run on the same branch. handed_off is terminal, so it must not
+# poison the whole overview table as unrecognized: the newest live run decides
+# the crew's state (2026-11-11 hand-off read unknown while the replacement ran).
+test_handed_off_run_yields_to_newer_live_run_on_same_branch() {
+  make_competing_runs_case handed-off-superseded running handed_off
+  local d=$TMP_ROOT/handed-off-superseded out
+  FM_FAKE_AXI_STATUS="$(run_running fm/competing | sed 's/01RUN/01NEW/')"
+  FM_FAKE_AXI_STATUS_RUN=$FM_FAKE_AXI_STATUS
+  out=$(run_crew_state "$d" competing)
+  assert_contains "$out" 'state: working' 'the newer live run decides the state past a handed_off sibling'
+  assert_contains "$out" 'source: run-step' 'the live run keeps its authoritative run-step detail'
+  assert_not_contains "$out" 'unrecognized run status' 'the handed_off sibling must not poison selection'
+  assert_not_contains "$out" 'state: unknown' 'the working replacement must not read unknown'
+  pass 'a handed_off run yields to the newer live run on the same branch'
 }
 
 # The LEGACY bare-status surface carries run-level `fixing` and `ci`, which the
@@ -6981,6 +6999,7 @@ test_historical_inventory_uses_current_status
 test_superseded_cancelled_run_preserves_replacement_gate
 test_live_rebased_run_beats_older_failed_run_at_local_head
 test_live_rebased_run_reads_working_for_every_executing_status
+test_handed_off_run_yields_to_newer_live_run_on_same_branch
 test_legacy_live_rebased_run_is_authoritative
 test_legacy_surface_binds_fixing_and_ci_at_a_rebased_head
 test_live_record_at_diverged_head_does_not_bind_an_unproven_record
