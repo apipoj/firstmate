@@ -243,13 +243,15 @@ done
 
 C_CALL_LOG="$TMP_ROOT/call-c.log"
 C_FOCUS_SAMPLES="$TMP_ROOT/focus-c.samples"
+C_CLOSE_FOCUS="$TMP_ROOT/focus-c-close.snapshot"
 : > "$C_CALL_LOG"
 : > "$C_FOCUS_SAMPLES"
 # A short proof budget keeps the exhausted-proof path fast; the count below is
 # what proves the proof was exhausted rather than skipped.
 C_PROOF_POLLS=3
+export -f lab focus_snapshot
 C_OUT=$(PATH="$FAKEBIN:$HERDR_ORIGINAL_PATH" FM_FLASH_CALL_LOG="$C_CALL_LOG" \
-  FM_FLASH_FOCUS_LOG="$C_FOCUS_SAMPLES" \
+  FM_FLASH_FOCUS_LOG="$C_FOCUS_SAMPLES" FM_FLASH_CLOSE_FOCUS="$C_CLOSE_FOCUS" \
   FM_BACKEND_HERDR_IDLE_SHELL_PROOF_POLLS="$C_PROOF_POLLS" bash -c '
   . "$1/bin/backends/herdr.sh"
   fm_backend_herdr_cli() {
@@ -260,6 +262,9 @@ C_OUT=$(PATH="$FAKEBIN:$HERDR_ORIGINAL_PATH" FM_FLASH_CALL_LOG="$C_CALL_LOG" \
     status=$?
     sample=$(focus_snapshot) || sample=UNREADABLE
     printf "%s\n" "$sample" >> "$FM_FLASH_FOCUS_LOG"
+    if [ "$1 $2" = "pane close" ] && [ "$status" -eq 0 ]; then
+      printf "%s\n" "$sample" > "$FM_FLASH_CLOSE_FOCUS"
+    fi
     return "$status"
   }
   fm_backend_herdr_projection_close_pane_focus_preserving "$2" "$3"
@@ -288,6 +293,8 @@ C_AFTER=$(focus_snapshot) || fail 'could not capture the Part C post-close focus
   || fail "the fallback close left focus off the anchor ($C_BEFORE -> $C_AFTER)"
 [ -s "$C_FOCUS_SAMPLES" ] || fail 'Part C captured no CLI-boundary focus sample during the production close'
 grep -Fxq UNREADABLE "$C_FOCUS_SAMPLES" && fail 'Part C could not read focus at a CLI boundary'
+[ -s "$C_CLOSE_FOCUS" ] || fail 'Part C did not capture focus immediately after the explicit close'
+C_AT_CLOSE=$(< "$C_CLOSE_FOCUS")
 C_WRONG=$(grep -Fvxc -- "$C_BEFORE" "$C_FOCUS_SAMPLES" || true)
 if [ "$STEAL_LIVE" = 1 ]; then
   # A defective release cannot make this path focus-safe, which is precisely why
@@ -295,10 +302,14 @@ if [ "$STEAL_LIVE" = 1 ]; then
   # explicitly accepted here, but only as a BOUNDED one: the restore backstop
   # must have put the anchor back exactly, and the whole exposure must end with
   # the operation rather than parking the captain somewhere else.
+  [ "$C_AT_CLOSE" != "$C_BEFORE" ] \
+    || fail 'Part C reached the fallback on a defective release but the explicit close did not change focus'
   [ "$C_WRONG" -ge 1 ] \
     || fail 'Part C reached the fallback on a defective release but observed no wrong focus at the explicit-close boundary'
   pass "fallback on a defective release: a bounded wrong-focus window of $C_WRONG samples was fully restored to the anchor"
 else
+  [ "$C_AT_CLOSE" = "$C_BEFORE" ] \
+    || fail "a focus-preserving release changed focus at the explicit close ($C_BEFORE -> $C_AT_CLOSE)"
   [ "$C_WRONG" -eq 0 ] \
     || fail "a focus-preserving release exposed $C_WRONG wrong-focus samples on the fallback path"
   pass 'fallback on a focus-preserving release: the plain explicit close preserved exact focus throughout'
